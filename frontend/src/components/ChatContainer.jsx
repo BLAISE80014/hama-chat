@@ -6,6 +6,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import NoChatHistoryPlaceHolder from "./NoChatHistoryPlaceHolder";
 import MessagesLoadingSkeleton from "./MessagesLoadingSkeleton";
 import MessageInput from "./MessageInput";
+import CallEventCard from "./CallEventCard";
 import { CheckCheck, Check, X, Download } from "lucide-react";
 
 // Seen ticks component
@@ -43,6 +44,10 @@ const ChatContainer = () => {
     getMessagesByUserId,
     messages,
     isMessagesLoading,
+    callEvents,
+    callEventsConversationId,
+    isCallEventsLoading,
+    getCallEventsByUserId,
     markAsSeen,
     editMessage,
     deleteMessage,
@@ -63,6 +68,23 @@ const ChatContainer = () => {
 
   const selectedUserId = selectedUser?._id;
   const selectedMessageId = selectedMessage?._id;
+  const selectedCallEvents = String(callEventsConversationId) === String(selectedUserId)
+    ? callEvents
+    : [];
+  const conversationItems = [
+    ...messages.map((message) => ({
+      type: "message",
+      id: `message-${message._id}`,
+      item: message,
+      timestamp: new Date(message.createdAt || 0).getTime(),
+    })),
+    ...selectedCallEvents.map((callEvent) => ({
+      type: "call",
+      id: `call-${callEvent.callId}`,
+      item: callEvent,
+      timestamp: new Date(callEvent.startedAt || callEvent.createdAt || 0).getTime(),
+    })),
+  ].sort((a, b) => a.timestamp - b.timestamp);
   const isTyping =
     typingState !== null &&
     String(typingState.senderId) === String(selectedUserId) &&
@@ -93,12 +115,12 @@ const ChatContainer = () => {
 
   // Load messages and subscribe to new messages
   useEffect(() => {
-    if (!selectedUserId) return;
-
-    getMessagesByUserId(selectedUserId);
+    if (selectedUserId) getMessagesByUserId(selectedUserId);
+    getCallEventsByUserId(selectedUserId);
   }, [
     selectedUserId,
     getMessagesByUserId,
+    getCallEventsByUserId,
   ]);
 
   // Mark received messages as seen
@@ -121,7 +143,7 @@ const ChatContainer = () => {
       messagesEndRef.current.scrollTop =
         messagesEndRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, callEvents]);
 
   // Typing indicator listener
   useEffect(() => {
@@ -202,20 +224,33 @@ const ChatContainer = () => {
 
       {/* Message Box */}
       <div className="hama-message-scroll">
-        {isMessagesLoading ? (
+        {isMessagesLoading || isCallEventsLoading ? (
           <MessagesLoadingSkeleton />
-        ) : messages.length > 0 ? (
+        ) : conversationItems.length > 0 ? (
           <div
             ref={messagesEndRef}
             className="hama-message-list"
           >
-            {messages.map((message) => {
+            {conversationItems.map((entry) => {
+              if (entry.type === "call") {
+                return (
+                  <div className="hama-call-event-row" key={entry.id}>
+                    <CallEventCard
+                      callEvent={entry.item}
+                      peer={selectedUser}
+                      currentUserId={authUser?._id}
+                    />
+                  </div>
+                );
+              }
+
+              const message = entry.item;
               const isMyMessage =
                 String(message.Sender) === String(authUser?._id);
 
               return (
                 <div
-                  key={message._id}
+                  key={entry.id}
                   className={`message-item chat ${
                     isMyMessage ? "chat-end" : "chat-start"
                   }`}

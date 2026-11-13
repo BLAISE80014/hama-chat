@@ -1407,6 +1407,177 @@ body {
   }
 }
 
+.hama-call-event-row {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  padding: 2px 0;
+}
+
+.hama-call-event {
+  display: grid;
+  width: min(100%, 500px);
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(204, 187, 241, .82);
+  border-radius: 17px;
+  color: #34205d;
+  background: linear-gradient(125deg, rgba(255, 255, 255, .97), rgba(247, 243, 255, .96));
+  box-shadow: 0 6px 18px rgba(64, 39, 114, .09);
+  animation: hama-call-event-enter 220ms ease-out both;
+}
+
+.hama-call-event.is-missed {
+  border-color: rgba(233, 177, 201, .8);
+  background: linear-gradient(125deg, #fff, #fff5f8);
+}
+
+.hama-call-event-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid rgba(124, 58, 237, .12);
+  border-radius: 14px;
+  color: #6d28d9;
+  background: linear-gradient(145deg, #f1eaff, #e5d7ff);
+}
+
+.hama-call-event-icon.is-video {
+  color: #5b21b6;
+  background: linear-gradient(145deg, #e9ddff, #d6c3ff);
+}
+
+.hama-call-event.is-missed .hama-call-event-icon {
+  border-color: rgba(216, 98, 141, .16);
+  color: #c13c70;
+  background: linear-gradient(145deg, #ffedf3, #fbd9e5);
+}
+
+.hama-call-event-content {
+  min-width: 0;
+}
+
+.hama-call-event-heading,
+.hama-call-event-details {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.hama-call-event-heading {
+  justify-content: space-between;
+}
+
+.hama-call-event-heading > strong {
+  overflow: hidden;
+  color: #2e1065;
+  font-size: 13px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hama-call-event-status,
+.hama-call-event-direction,
+.hama-call-event-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hama-call-event-status {
+  flex: 0 0 auto;
+  color: #6d28d9;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.hama-call-event.is-missed .hama-call-event-status {
+  color: #b83267;
+}
+
+.hama-call-event-details {
+  flex-wrap: wrap;
+  margin-top: 5px;
+  color: #75639e;
+  font-size: 11px;
+}
+
+.hama-call-event-peer {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  color: #4a3471;
+}
+
+.hama-call-event-peer img {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(124, 58, 237, .2);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.hama-call-event-direction,
+.hama-call-event-duration {
+  white-space: nowrap;
+}
+
+.hama-call-event > time {
+  align-self: start;
+  padding-top: 2px;
+  color: #8a79a8;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+@keyframes hama-call-event-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 767px) {
+  .hama-call-event {
+    width: min(100%, 440px);
+    grid-template-columns: 37px minmax(0, 1fr) auto;
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .hama-call-event-icon {
+    width: 37px;
+    height: 37px;
+    border-radius: 12px;
+  }
+
+  .hama-call-event-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .hama-call-event-details {
+    gap: 7px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hama-call-event {
+    animation: none;
+  }
+}
+
 .hama-chat-row-content {
   display: flex;
   min-width: 0;

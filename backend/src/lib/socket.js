@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import { socketAuthMiddleware } from "../middleware/socket.middleware.js";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
+import CallEvent from "../models/CallEvent.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -49,6 +50,34 @@ function emitOnlineUsers() {
     io.emit("getOnlineUsers", getOnlineUserIds());
 }
 
+function callEventPayload(event) {
+    return {
+        _id: String(event._id),
+        callId: event.callId,
+        callerId: String(event.callerId),
+        receiverId: String(event.receiverId),
+        callType: event.callType,
+        status: event.status,
+        startedAt: event.startedAt,
+        answeredAt: event.answeredAt,
+        endedAt: event.endedAt,
+        durationSeconds: event.durationSeconds,
+        endReason: event.endReason,
+        createdAt: event.createdAt,
+        updatedAt: event.updatedAt,
+    };
+}
+
+function emitCallEvent(event) {
+    if (!event) return;
+    const socketIds = new Set([
+        ...getReceiverSocketIds(event.callerId),
+        ...getReceiverSocketIds(event.receiverId),
+    ]);
+    const payload = callEventPayload(event);
+    socketIds.forEach((socketId) => io.to(socketId).emit("callEventUpdated", payload));
+}
+
 const isValidUserId = (id) => typeof id === "string" && /^[a-f\d]{24}$/i.test(id);
 
 function finishCall(callId, reason, { rejected = false } = {}) {
@@ -65,6 +94,27 @@ function finishCall(callId, reason, { rejected = false } = {}) {
     if (userActiveCallMap.get(call.receiverId) === callId) {
         userActiveCallMap.delete(call.receiverId);
     }
+
+    const endedAt = new Date();
+    const status = call.status === "active"
+        ? "completed"
+        : reason === "timeout"
+            ? "missed"
+            : rejected
+                ? "declined"
+                : reason === "ended"
+                    ? "cancelled"
+                    : "failed";
+    const durationSeconds = call.answeredAt
+        ? Math.max(0, Math.floor((endedAt.getTime() - call.answeredAt.getTime()) / 1000))
+        : 0;
+    void CallEvent.findOneAndUpdate(
+        { callId, status: { $in: ["ringing", "active"] } },
+        { $set: { status, endedAt, durationSeconds, endReason: reason } },
+        { new: true }
+    )
+        .then(emitCallEvent)
+        .catch((error) => console.error("Could not save call event outcome:", error));
 
     if (rejected) {
         io.to(call.callerSocketId).emit("callRejected", { callId, reason });
@@ -154,6 +204,15 @@ io.on("connection", (socket) => {
                 return;
             }
 
+            const startedAt = new Date();
+            const callEvent = await CallEvent.create({
+                callId,
+                callerId: userId,
+                receiverId: targetId,
+                callType,
+                status: "ringing",
+                startedAt,
+            });
             const call = {
                 callId,
                 callerId: userId,
@@ -162,8 +221,10 @@ io.on("connection", (socket) => {
                 receiverSocketId,
                 callType,
                 status: "ringing",
+                startedAt,
             };
             callSessions.set(callId, call);
+            emitCallEvent(callEvent);
             callTimers.set(callId, setTimeout(() => {
                 finishCall(callId, "timeout");
             }, CALL_RING_TIMEOUT_MS));
@@ -187,7 +248,7 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("acceptCall", ({ callId, answer } = {}, callback) => {
+    socket.on("acceptCall", async ({ callId, answer } = {}, callback) => {
         const call = callSessions.get(callId);
         if (
             !call ||
@@ -202,11 +263,35 @@ io.on("connection", (socket) => {
             return;
         }
 
-        call.status = "active";
+        const answeredAt = new Date();
         clearTimeout(callTimers.get(callId));
         callTimers.delete(callId);
-        io.to(call.callerSocketId).emit("callAccepted", { callId, answer });
-        callback?.({ success: true });
+        try {
+            const callEvent = await CallEvent.findOneAndUpdate(
+                { callId, status: "ringing" },
+                { $set: { status: "active", answeredAt } },
+                { new: true }
+            ).maxTimeMS(5000);
+            if (!callEvent) {
+                finishCall(callId, "failed");
+                failCallRequest(callback, "This call can no longer be accepted");
+                return;
+            }
+            if (callSessions.get(callId) !== call || call.status !== "ringing") {
+                failCallRequest(callback, "This call can no longer be accepted");
+                return;
+            }
+
+            call.status = "active";
+            call.answeredAt = answeredAt;
+            emitCallEvent(callEvent);
+            io.to(call.callerSocketId).emit("callAccepted", { callId, answer });
+            callback?.({ success: true });
+        } catch (error) {
+            console.error("Could not update call event:", error);
+            finishCall(callId, "failed");
+            failCallRequest(callback, "Could not accept the call");
+        }
     });
 
     socket.on("rejectCall", ({ callId } = {}, callback) => {

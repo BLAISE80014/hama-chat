@@ -28,7 +28,9 @@ const StatusViewer = () => {
     const duration = IMAGE_DURATION_MS;
     const elapsed = elapsedState.statusId === status?._id ? elapsedState.elapsed : 0;
     const videoProgress = videoProgressState.statusId === status?._id ? videoProgressState.progress : 0;
-    const viewerList = viewerListState?.statusId === status?._id ? viewerListState.viewers : null;
+    const viewerList = statusId && viewerListState?.statusId === statusId
+        ? viewerListState.viewers
+        : null;
 
     const nextStatus = useCallback(() => {
         if (!group) return closeViewer();

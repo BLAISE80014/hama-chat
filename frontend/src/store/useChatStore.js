@@ -4,17 +4,30 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "./useAuthStore";
 
 let messagesRequestId = 0;
+let callEventsRequestId = 0;
 let subscribedMessageSocket = null;
 let messageSocketHandlers = null;
+
+const sortCallEvents = (callEvents) =>
+    [...callEvents].sort((a, b) => new Date(a.startedAt) - new Date(b.startedAt));
+
+const upsertCallEvent = (callEvents, callEvent) => {
+    const updated = callEvents.filter((item) => item.callId !== callEvent.callId);
+    updated.push(callEvent);
+    return sortCallEvents(updated);
+};
 
 export const useChatStore = create((set, get) => ({
     allcontacts: [],
     messages: [],
+    callEvents: [],
+    callEventsConversationId: null,
     chats: [],
     ActiveTab: "chats",
     selectedUser: null,
     isUsersLoading: false,
     isMessagesLoading: false,
+    isCallEventsLoading: false,
 
     unreadMessages: {},
     showReceiverProfile: false,
@@ -93,6 +106,57 @@ export const useChatStore = create((set, get) => ({
         } finally {
             if (requestId === messagesRequestId) {
                 set({ isMessagesLoading: false });
+            }
+        }
+    },
+
+    getCallEventsByUserId: async (userId) => {
+        const requestId = ++callEventsRequestId;
+        if (!userId) {
+            set({
+                callEvents: [],
+                callEventsConversationId: null,
+                isCallEventsLoading: false,
+            });
+            return;
+        }
+
+        const conversationId = String(userId);
+        set({
+            callEvents: [],
+            callEventsConversationId: conversationId,
+            isCallEventsLoading: true,
+        });
+        try {
+            const response = await axiosInstance.get(`/messages/call-events/${conversationId}`);
+            if (!Array.isArray(response.data?.callEvents)) {
+                throw new Error("Invalid call history response");
+            }
+            if (requestId === callEventsRequestId) {
+                set((state) => {
+                    const recentEvents = state.callEventsConversationId === conversationId
+                        ? state.callEvents
+                        : [];
+                    const eventsByCallId = new Map(
+                        [...response.data.callEvents, ...recentEvents].map((event) => [
+                            event.callId,
+                            event,
+                        ])
+                    );
+                    return {
+                        callEventsConversationId: conversationId,
+                        callEvents: sortCallEvents([...eventsByCallId.values()]),
+                    };
+                });
+            }
+        } catch (error) {
+            if (requestId === callEventsRequestId) {
+                set({ callEvents: [], callEventsConversationId: conversationId });
+                toast.error(error.response?.data?.message || "Could not load call history");
+            }
+        } finally {
+            if (requestId === callEventsRequestId) {
+                set({ isCallEventsLoading: false });
             }
         }
     },
@@ -299,6 +363,34 @@ export const useChatStore = create((set, get) => ({
             }
         };
 
+        const handleCallEventUpdated = (callEvent) => {
+            const { authUser } = useAuthStore.getState();
+            if (
+                !callEvent?.callId ||
+                !callEvent.callerId ||
+                !callEvent.receiverId ||
+                !authUser?._id
+            ) {
+                return;
+            }
+
+            const currentUserId = String(authUser._id);
+            const callerId = String(callEvent.callerId);
+            const receiverId = String(callEvent.receiverId);
+            if (callerId !== currentUserId && receiverId !== currentUserId) return;
+
+            const conversationId = callerId === currentUserId ? receiverId : callerId;
+            if (String(get().selectedUser?._id) !== conversationId) return;
+
+            set((state) => ({
+                callEventsConversationId: conversationId,
+                callEvents: upsertCallEvent(
+                    state.callEventsConversationId === conversationId ? state.callEvents : [],
+                    callEvent
+                ),
+            }));
+        };
+
         messageSocketHandlers = {
             newMessage: handleNewMessage,
             unreadCountUpdated: handleUnreadCount,
@@ -306,6 +398,7 @@ export const useChatStore = create((set, get) => ({
             messageEdited: handleMessageEdited,
             messageDeleted: handleMessageDeleted,
             blockedByUser: handleBlockedByUser,
+            callEventUpdated: handleCallEventUpdated,
         };
         subscribedMessageSocket = socket;
         Object.entries(messageSocketHandlers).forEach(([eventName, handler]) => {

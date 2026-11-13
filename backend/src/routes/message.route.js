@@ -10,12 +10,14 @@ import {
     editMessage,
     getConversationMedia,
 } from '../controllers/message.controller.js'
+import { getConversationCallEvents } from "../controllers/callEvent.controller.js";
 
 const router = express.Router();
 
 router.put("/seen/:id", protectRoute, markMessagesAsSeen);
 router.put("/edit/:id", protectRoute, editMessage);
 router.get("/media", protectRoute, getConversationMedia);
+router.get("/call-events/:id", protectRoute, getConversationCallEvents);
 
 router.get('/contacts', protectRoute, getAllContact)
 router.get('/chats',protectRoute,getChatsPartners)
