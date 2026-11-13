@@ -3,6 +3,7 @@ import { Search } from 'lucide-react'
 import UserLoadingSkeleton from './UserLoadingSkeleton'
 import { useChatStore } from '../store/useChatStore'
 import { useAuthStore } from '../store/useAuthStore'
+import StatusAvatar from './StatusAvatar'
 
 const ContactList = ({ searchQuery = '' }) => {
   const { allcontacts, selectedUser, setSelectedUser, getAllContacts, isUsersLoading } = useChatStore()
@@ -34,28 +35,33 @@ const ContactList = ({ searchQuery = '' }) => {
         const contactId = String(contact._id)
         const isSelected = contactId === String(selectedUser?._id)
         return (
-          <button
-            type="button"
+          <div
             key={contact._id}
-            onClick={() => setSelectedUser(contact)}
             className={`hama-chat-row ${isSelected ? 'is-selected' : ''}`}
-            aria-current={isSelected ? 'true' : undefined}
           >
-            <span className="hama-list-avatar">
-              <img src={contact.profilepic || '/avatar.jpg'} alt="" />
-              {onlineIds.has(contactId) && <i className="hama-online-dot" />}
-            </span>
-            <span className="hama-chat-row-body">
-              <span className="hama-chat-row-top">
-                <strong>{contact.fullName}</strong>
-              </span>
-              <span className="hama-chat-row-bottom">
-                <span className="hama-chat-preview">
-                  {onlineIds.has(contactId) ? 'Online now' : 'Start a conversation'}
+            <StatusAvatar
+              user={contact}
+              online={onlineIds.has(contactId)}
+              className="hama-list-avatar"
+            />
+            <button
+              type="button"
+              onClick={() => setSelectedUser(contact)}
+              className="hama-chat-row-content"
+              aria-current={isSelected ? 'true' : undefined}
+            >
+              <span className="hama-chat-row-body">
+                <span className="hama-chat-row-top">
+                  <strong>{contact.fullName}</strong>
+                </span>
+                <span className="hama-chat-row-bottom">
+                  <span className="hama-chat-preview">
+                    {onlineIds.has(contactId) ? 'Online now' : 'Start a conversation'}
+                  </span>
                 </span>
               </span>
-            </span>
-          </button>
+            </button>
+          </div>
         )
       })}
     </div>

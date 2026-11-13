@@ -327,9 +327,12 @@ io.on("connection", (socket) => {
     });
 
     // MARK MESSAGES AS SEEN
-    socket.on("markAsSeen", async ({ senderId } = {}) => {
+    socket.on("markAsSeen", async ({ senderId } = {}, callback) => {
         try {
-            if (!senderId || String(senderId) === userId) return;
+            if (!isValidUserId(senderId) || String(senderId) === userId) {
+                callback?.({ success: false, message: "Invalid conversation user" });
+                return;
+            }
 
             const receiverId = userId;
             const seenAt = new Date();
@@ -339,6 +342,7 @@ io.on("connection", (socket) => {
                     Sender: senderId,
                     Reciever: receiverId,
                     seen: false,
+                    isDeleted: { $ne: true },
                 },
                 {
                     $set: {
@@ -348,18 +352,31 @@ io.on("connection", (socket) => {
                 }
             );
 
-            if (result.modifiedCount === 0) return;
+            if (result.modifiedCount > 0) {
+                getReceiverSocketIds(senderId).forEach((id) => {
+                    io.to(id).emit("messagesSeen", {
+                        by: receiverId,
+                        seenAt,
+                    });
+                });
+            }
 
-            const senderSocketIds = getReceiverSocketIds(senderId);
-
-            senderSocketIds.forEach((id) => {
-                io.to(id).emit("messagesSeen", {
-                    by: receiverId,
-                    seenAt,
+            const unreadCount = await Message.countDocuments({
+                Sender: senderId,
+                Reciever: receiverId,
+                seen: false,
+                isDeleted: { $ne: true },
+            });
+            getReceiverSocketIds(receiverId).forEach((id) => {
+                io.to(id).emit("unreadCountUpdated", {
+                    conversationId: senderId,
+                    count: unreadCount,
                 });
             });
+            callback?.({ success: true, updatedCount: result.modifiedCount, unreadCount });
         } catch (error) {
             console.error("Error in markAsSeen:", error);
+            callback?.({ success: false, message: "Could not mark messages as read" });
         }
     });
 
@@ -405,6 +422,13 @@ io.on("connection", (socket) => {
             message.deleteReason = reason || null;
             message.text = null;
             message.image = null;
+            message.mediaUrl = null;
+            message.mediaPublicId = null;
+            message.mediaType = null;
+            message.mediaName = null;
+            message.mediaMimeType = null;
+            message.mediaSize = null;
+            message.mediaDuration = null;
 
             await message.save();
 
@@ -420,6 +444,20 @@ io.on("connection", (socket) => {
             participantSocketIds.forEach((id) => {
                 io.to(id).emit("messageDeleted", payload);
             });
+            if (!message.seen) {
+                const unreadCount = await Message.countDocuments({
+                    Sender: userId,
+                    Reciever: message.Reciever,
+                    seen: false,
+                    isDeleted: { $ne: true },
+                });
+                getReceiverSocketIds(message.Reciever).forEach((id) => {
+                    io.to(id).emit("unreadCountUpdated", {
+                        conversationId: userId,
+                        count: unreadCount,
+                    });
+                });
+            }
             callback?.({ success: true });
         } catch (error) {
             console.error("Error in deleteMessage:", error);

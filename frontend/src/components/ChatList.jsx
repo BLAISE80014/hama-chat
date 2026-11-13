@@ -4,6 +4,7 @@ import UserLoadingSkeleton from './UserLoadingSkeleton'
 import NoChatsFound from './NoChatsFound'
 import { useChatStore } from '../store/useChatStore'
 import { useAuthStore } from '../store/useAuthStore'
+import StatusAvatar from './StatusAvatar'
 
 const formatMessageTime = (date) => {
   if (!date) return ''
@@ -24,7 +25,6 @@ const ChatList = ({ searchQuery = '' }) => {
     setSelectedUser,
     isUsersLoading,
     unreadMessages,
-    clearUnread,
   } = useChatStore()
   const { onlineUsers, authUser } = useAuthStore()
   const onlineIds = new Set(onlineUsers.map(String))
@@ -46,31 +46,33 @@ const ChatList = ({ searchQuery = '' }) => {
         const chatId = String(chat._id)
         const isSelected = chatId === String(selectedUser?._id)
         const isOnline = onlineIds.has(chatId)
-        const lastMessage = isSelected ? messages.at(-1) : null
+        const lastMessage = isSelected ? messages.at(-1) : chat.lastMessage
         const preview = lastMessage
           ? lastMessage.isDeleted
             ? 'Message deleted'
-            : lastMessage.text || (lastMessage.image ? 'Photo' : '')
+            : lastMessage.text ||
+              (lastMessage.image || lastMessage.mediaType === 'image' ? 'Photo' :
+                lastMessage.mediaType === 'video' ? 'Video' :
+                  lastMessage.mediaType === 'voice' ? 'Voice message' :
+                    lastMessage.mediaType === 'audio' ? 'Audio' :
+                      lastMessage.mediaType ? 'File' : '')
           : 'No messages yet'
         const sentByMe = lastMessage &&
           String(lastMessage.Sender) === String(authUser?._id)
 
         return (
-          <button
-            type="button"
+          <div
             key={chat._id}
-            onClick={() => {
-              setSelectedUser(chat)
-              clearUnread(chat._id)
-            }}
             className={`hama-chat-row ${isSelected ? 'is-selected' : ''}`}
-            aria-current={isSelected ? 'true' : undefined}
           >
-            <span className="hama-list-avatar">
-              <img src={chat.profilepic || '/avatar.jpg'} alt="" />
-              {isOnline && <i className="hama-online-dot" />}
-            </span>
-            <span className="hama-chat-row-body">
+            <StatusAvatar user={chat} online={isOnline} className="hama-list-avatar" />
+            <button
+              type="button"
+              onClick={() => setSelectedUser(chat)}
+              className="hama-chat-row-content"
+              aria-current={isSelected ? 'true' : undefined}
+            >
+              <span className="hama-chat-row-body">
               <span className="hama-chat-row-top">
                 <strong>{chat.fullName}</strong>
                 <span className="hama-chat-time">
@@ -83,13 +85,16 @@ const ChatList = ({ searchQuery = '' }) => {
                   {sentByMe && lastMessage.seen && (
                     <CheckCheck size={15} className="hama-list-seen" aria-label="Seen" />
                   )}
-                  {unreadMessages[chat._id] && (
-                    <i className="hama-unread-dot" aria-label="Unread message" />
+                  {unreadMessages[chatId] > 0 && (
+                    <i className="hama-unread-dot" aria-label={`${unreadMessages[chatId]} unread messages`}>
+                      {unreadMessages[chatId] > 99 ? '99+' : unreadMessages[chatId]}
+                    </i>
                   )}
                 </span>
               </span>
-            </span>
-          </button>
+              </span>
+            </button>
+          </div>
         )
       })}
     </div>

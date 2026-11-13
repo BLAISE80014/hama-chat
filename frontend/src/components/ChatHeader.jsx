@@ -4,6 +4,7 @@ import { useChatStore } from '../store/useChatStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { useCallStore } from '../store/useCallStore';
 import useWindowSize from '../hooks/useWindowSize';
+import StatusAvatar from './StatusAvatar';
 
 const ChatHeader = () => {
     const { selectedUser, setSelectedUser, setShowReceiverProfile, selectedMessage, setSelectedMessage, } = useChatStore();
@@ -103,24 +104,24 @@ const ChatHeader = () => {
             <header className='hama-chat-header'>
                 {/* LeftSide */}
 
-                <div className='hama-chat-person'
-                    onClick={() => setShowReceiverProfile(true)} >
-
-                    <div className='hama-chat-person-avatar'>
-                        <img
-                            src={selectedUser?.profilepic || "/avatar.jpg"}
-                            alt={selectedUser?.fullName}
-                        />
-                        {isSelectedUserOnline && <i className="hama-online-dot" />}
-                    </div>
-
-                    <div className='hama-chat-person-copy'>
+                <div className='hama-chat-person'>
+                    <StatusAvatar
+                        user={selectedUser}
+                        online={isSelectedUserOnline}
+                        className="hama-chat-person-avatar"
+                        onNoStatusClick={() => setShowReceiverProfile(true)}
+                    />
+                    <button
+                        type="button"
+                        className='hama-chat-person-copy'
+                        onClick={() => setShowReceiverProfile(true)}
+                    >
                         <strong>{selectedUser?.fullName}</strong>
                         <span>
                             <i className={isSelectedUserOnline ? '' : 'is-offline'} />
                             {isSelectedUserOnline ? 'Online' : 'Offline'}
                         </span>
-                    </div>
+                    </button>
                 </div>
 
                 <div className="hama-header-actions">

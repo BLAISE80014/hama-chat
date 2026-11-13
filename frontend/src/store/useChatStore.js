@@ -4,6 +4,8 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "./useAuthStore";
 
 let messagesRequestId = 0;
+let subscribedMessageSocket = null;
+let messageSocketHandlers = null;
 
 export const useChatStore = create((set, get) => ({
     allcontacts: [],
@@ -39,7 +41,14 @@ export const useChatStore = create((set, get) => ({
         set({ isUsersLoading: true })
         try {
             const res = await axiosInstance.get('/messages/chats', data);
-            set({ chats: res.data })
+            set({
+                chats: res.data,
+                unreadMessages: Object.fromEntries(
+                    res.data
+                        .filter((chat) => chat.unreadCount > 0)
+                        .map((chat) => [String(chat._id), chat.unreadCount])
+                ),
+            })
         } catch (error) {
             toast.error(error.response?.data?.message)
         } finally {
@@ -103,6 +112,12 @@ export const useChatStore = create((set, get) => ({
             Reciever: receiverId,
             text: messageData.text,
             image: messageData.image,
+            mediaData: messageData.mediaData,
+            mediaType: messageData.mediaType,
+            mediaName: messageData.mediaName,
+            mediaMimeType: messageData.mediaMimeType,
+            mediaSize: messageData.mediaSize,
+            mediaDuration: messageData.mediaDuration,
             createdAt: new Date().toISOString(),
             isOptimistic: true,
         };
@@ -129,22 +144,25 @@ export const useChatStore = create((set, get) => ({
         }
     },
 
-    clearUnread: (userId) => {
-        set((state) => {
-            const updated = { ...state.unreadMessages };
-            delete updated[userId];
-            return { unreadMessages: updated };
-        });
-    },
-    // ✅ FEATURE 1: Mark messages as seen via Socket
-    // Jab user kisi ka chat open kare - ye call karo
     markAsSeen: (senderId) => {
         const socket = useAuthStore.getState().socket;
         if (!socket?.connected || !senderId) return;
 
-        // Socket se server ko batao - server DB update karega + sender ko notify karega
-        socket.emit("markAsSeen", { senderId });
-
+        socket.emit("markAsSeen", { senderId: String(senderId) }, (response) => {
+            if (!response?.success) {
+                toast.error(response?.message || "Could not mark messages as read");
+                return;
+            }
+            set((state) => {
+                const unreadMessages = { ...state.unreadMessages };
+                if (response.unreadCount > 0) {
+                    unreadMessages[String(senderId)] = response.unreadCount;
+                } else {
+                    delete unreadMessages[String(senderId)];
+                }
+                return { unreadMessages };
+            });
+        });
     },
 
     deleteMessage: (messageId, reason) => {
@@ -176,123 +194,133 @@ export const useChatStore = create((set, get) => ({
     subscribeToMessages: () => {
         const socket = useAuthStore.getState().socket;
         if (!socket) return;
+        get().unsubscribeFromMessages();
 
-        socket.off("newMessage");
-        socket.off("messagesSeen"); // ✅ Pehle clean karo
-        socket.off("messageEdited");
-        socket.off("blockedByUser");
-        socket.off("messageDeleted");
-
-        socket.on("newMessage", (newMessage) => {
-            const { selectedUser } = get();
+        const handleNewMessage = (newMessage) => {
             const { authUser } = useAuthStore.getState();
-            const isIncoming = String(newMessage.Reciever) === String(authUser?._id);
-            const peerId = isIncoming ? newMessage.Sender : newMessage.Reciever;
-            const hasChat = get().chats.some(
-                (chat) => String(chat._id) === String(peerId)
-            );
-            const isMessageInSelectedConversation =
-                String(peerId) === String(selectedUser?._id);
+            if (!newMessage?._id || !authUser?._id) return;
+            const currentUserId = String(authUser._id);
+            const isIncoming = String(newMessage.Reciever) === currentUserId;
+            const isOutgoing = String(newMessage.Sender) === currentUserId;
+            if (!isIncoming && !isOutgoing) return;
 
-            if (!isMessageInSelectedConversation) {
-                set((state) => ({
-                    unreadMessages: isIncoming
-                        ? { ...state.unreadMessages, [peerId]: true }
-                        : state.unreadMessages,
-                    chats: hasChat
-                        ? [
-                            state.chats.find((chat) => String(chat._id) === String(peerId)),
-                            ...state.chats.filter((chat) => String(chat._id) !== String(peerId)),
-                        ]
-                        : state.chats,
-                }));
-                if (isIncoming && !hasChat) {
-                    get().getMyChatPartners();
-                }
-                return;
-            }
+            const peerId = String(isIncoming ? newMessage.Sender : newMessage.Reciever);
+            const selectedUserId = String(get().selectedUser?._id);
+            const isSelectedConversation = peerId === selectedUserId;
+            const hasChat = get().chats.some((chat) => String(chat._id) === peerId);
 
+            set((state) => {
+                const chats = state.chats.filter((chat) => String(chat._id) !== peerId);
+                const existingChat = state.chats.find((chat) => String(chat._id) === peerId);
+                const updatedChat = existingChat
+                    ? { ...existingChat, lastMessage: newMessage }
+                    : null;
+                const messages = isSelectedConversation &&
+                    !state.messages.some((message) => String(message._id) === String(newMessage._id))
+                    ? [...state.messages, newMessage]
+                    : state.messages;
+                return {
+                    chats: updatedChat ? [updatedChat, ...chats] : state.chats,
+                    messages,
+                };
+            });
+
+            if (!hasChat) get().getMyChatPartners();
+            if (isIncoming && isSelectedConversation) get().markAsSeen(peerId);
+        };
+
+        const handleUnreadCount = ({ conversationId, count } = {}) => {
+            if (!conversationId || !Number.isInteger(count) || count < 0) return;
+            set((state) => {
+                const unreadMessages = { ...state.unreadMessages };
+                if (count > 0) unreadMessages[String(conversationId)] = count;
+                else delete unreadMessages[String(conversationId)];
+                return {
+                    unreadMessages,
+                    chats: state.chats.map((chat) =>
+                        String(chat._id) === String(conversationId)
+                            ? { ...chat, unreadCount: count }
+                            : chat
+                    ),
+                };
+            });
+        };
+
+        const handleMessagesSeen = ({ by, seenAt } = {}) => {
+            const { authUser } = useAuthStore.getState();
+            if (String(get().selectedUser?._id) !== String(by)) return;
             set((state) => ({
-                messages: state.messages.some((message) => String(message._id) === String(newMessage._id))
-                    ? state.messages
-                    : [...state.messages, newMessage],
+                messages: state.messages.map((message) =>
+                    String(message.Sender) === String(authUser?._id) &&
+                    String(message.Reciever) === String(by) &&
+                    !message.seen &&
+                    new Date(message.createdAt).getTime() <= new Date(seenAt).getTime()
+                        ? { ...message, seen: true, seenAt }
+                        : message
+                ),
             }));
-            if (!hasChat) {
-                get().getMyChatPartners();
-            }
+        };
 
-            // ✅ FEATURE 1: Jab message aaye aur chat open ho - turant seen mark karo
-            const { selectedUser: currentSelectedUser } = get();
-            if (
-                isIncoming &&
-                String(currentSelectedUser?._id) === String(newMessage.Sender)
-            ) {
-                get().markAsSeen(newMessage.Sender);
-            }
-        });
+        const handleMessageEdited = (updatedMessage) => {
+            set((state) => ({
+                messages: state.messages.map((message) =>
+                    String(message._id) === String(updatedMessage._id) ? updatedMessage : message
+                ),
+            }));
+        };
 
-        // ✅ FEATURE 1: Sender side - jab receiver dekhe to apne messages update karo
-        socket.on("messagesSeen", ({ by, seenAt }) => {
-            const { selectedUser } = get();
-
-            // Agar jo message dekha wo same selected user ne dekha
-            if (String(selectedUser?._id) === String(by)) {
-                set((state) => ({
-                    messages: state.messages.map((msg) => {
-                        const { authUser } = useAuthStore.getState();
-                        // Sirf apne bheje hue messages update karo
-                        if (String(msg.Sender) === String(authUser?._id) && !msg.seen) {
-                            return { ...msg, seen: true, seenAt };
+        const handleMessageDeleted = ({ messageId, reason } = {}) => {
+            set((state) => ({
+                messages: state.messages.map((message) =>
+                    String(message._id) === String(messageId)
+                        ? {
+                            ...message,
+                            isDeleted: true,
+                            text: null,
+                            image: null,
+                            mediaUrl: null,
+                            mediaType: null,
+                            mediaName: null,
+                            deleteReason: reason,
                         }
-                        return msg;
-                    })
-                }));
-            }
-        });
-
-        socket.on("messageEdited", (updatedMessage) => {
-            set((state) => ({
-                messages: state.messages.map((msg) =>
-                    String(msg._id) === String(updatedMessage._id) ? updatedMessage : msg
-                )
+                        : message
+                ),
+                chats: state.chats.map((chat) =>
+                    String(chat.lastMessage?._id) === String(messageId)
+                        ? { ...chat, lastMessage: { ...chat.lastMessage, isDeleted: true, text: null, image: null, mediaType: null } }
+                        : chat
+                ),
             }));
-        });
-        socket.on("messageDeleted", ({ messageId, reason }) => {
-            set((state) => ({
-                messages: state.messages.map((msg) =>
-                    String(msg._id) === String(messageId)
-                        ? { ...msg, isDeleted: true, text: null, image: null, deleteReason: reason }
-                        : msg
-                )
-            }));
+        };
 
-            // ✅ Idea 1 — 5 seconds baad placeholder bhi hatao (receiver side)
-            setTimeout(() => {
-                set((state) => ({
-                    messages: state.messages.filter(
-                        (msg) => String(msg._id) !== String(messageId)
-                    )
-                }));
-            }, 5000);
-        });
-        socket.on("blockedByUser", ({ blockerId }) => {
-            const { selectedUser } = get();
-            // Agar jis user se chat chal rahi hai usne block kiya
-            if (String(selectedUser?._id) === String(blockerId)) {
+        const handleBlockedByUser = ({ blockerId } = {}) => {
+            if (String(get().selectedUser?._id) === String(blockerId)) {
                 toast.error("You have been blocked by this user");
             }
+        };
+
+        messageSocketHandlers = {
+            newMessage: handleNewMessage,
+            unreadCountUpdated: handleUnreadCount,
+            messagesSeen: handleMessagesSeen,
+            messageEdited: handleMessageEdited,
+            messageDeleted: handleMessageDeleted,
+            blockedByUser: handleBlockedByUser,
+        };
+        subscribedMessageSocket = socket;
+        Object.entries(messageSocketHandlers).forEach(([eventName, handler]) => {
+            socket.on(eventName, handler);
         });
 
     },
 
     unsubscribeFromMessages: () => {
-        const socket = useAuthStore.getState().socket;
-        if (!socket) return;
-        socket.off("newMessage");
-        socket.off("messagesSeen"); // ✅ Clean up
-        socket.off("messageEdited");
-        socket.off("blockedByUser");
-        socket.off("messageDeleted");
+        if (!subscribedMessageSocket || !messageSocketHandlers) return;
+        Object.entries(messageSocketHandlers).forEach(([eventName, handler]) => {
+            subscribedMessageSocket.off(eventName, handler);
+        });
+        subscribedMessageSocket = null;
+        messageSocketHandlers = null;
     },
 
 }))

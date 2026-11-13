@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { LogOut, MessageCircleMore, Search, Settings, SquarePen } from 'lucide-react'
 import { useChatStore } from '../store/useChatStore'
 import { useAuthStore } from '../store/useAuthStore'
@@ -12,13 +12,28 @@ import useWindowSize from '../hooks/useWindowSize'
 import ReceiverProfileDrawer from '../components/ReceiverProfileDrawer'
 import SettingsModal from '../components/SettingsModal'
 import CallOverlay from '../components/CallOverlay'
+import MediaLibrary from '../components/MediaLibrary'
+import StatusPage from '../components/StatusPage'
+import StatusViewer from '../components/StatusViewer'
+import { useStatusStore } from '../store/useStatusStore'
 
 const Chatpage = () => {
   const { ActiveTab, selectedUser, setActiveTab } = useChatStore()
-  const { logout } = useAuthStore()
+  const { logout, socket } = useAuthStore()
   const { isMobile, isTablet } = useWindowSize()
   const [searchQuery, setSearchQuery] = useState('')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const loadStatuses = useStatusStore((state) => state.loadStatuses)
+  const subscribeToStatusEvents = useStatusStore((state) => state.subscribeToStatusEvents)
+  const activeViewerUserId = useStatusStore((state) => state.activeViewerUserId)
+  const isFeaturePage = ActiveTab === 'media' || ActiveTab === 'status'
+  const featurePage = ActiveTab === 'media' ? <MediaLibrary /> : <StatusPage />
+
+  useEffect(() => {
+    if (!socket) return undefined
+    void loadStatuses()
+    return subscribeToStatusEvents()
+  }, [socket, loadStatuses, subscribeToStatusEvents])
 
   const conversationList = ActiveTab === 'chats'
     ? <ChatList searchQuery={searchQuery} />
@@ -58,7 +73,7 @@ const Chatpage = () => {
     return (
       <div className="hama-page hama-mobile-page">
         <ReceiverProfileDrawer />
-        {selectedUser ? (
+        {selectedUser && !isFeaturePage ? (
           <div className="hama-mobile-chat">
             <ChatContainer />
           </div>
@@ -83,10 +98,13 @@ const Chatpage = () => {
             </header>
             <ProfileHeader onOpenSettings={() => setIsSettingsOpen(true)} />
             <ActiveTabSwitch />
-            {listPanel}
+            {isFeaturePage
+              ? <div className="hama-mobile-feature">{featurePage}</div>
+              : listPanel}
           </div>
         )}
         <CallOverlay />
+        <StatusViewer key={activeViewerUserId || 'closed'} />
         <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       </div>
     )
@@ -152,12 +170,19 @@ const Chatpage = () => {
           )}
           <ProfileHeader onOpenSettings={() => setIsSettingsOpen(true)} compact={isTablet} />
         </aside>
-        {listPanel}
-        <main className="hama-conversation-view">
-          {selectedUser ? <ChatContainer /> : <NoChatConversation />}
-        </main>
+        {isFeaturePage ? (
+          <main className="hama-feature-workspace">{featurePage}</main>
+        ) : (
+          <>
+            {listPanel}
+            <main className="hama-conversation-view">
+              {selectedUser ? <ChatContainer /> : <NoChatConversation />}
+            </main>
+          </>
+        )}
       </div>
       <CallOverlay />
+      <StatusViewer key={activeViewerUserId || 'closed'} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   )

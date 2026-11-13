@@ -6,8 +6,10 @@ import cors from 'cors';
 
 import authRoute from './routes/auth.route.js';
 import messageRoute from './routes/message.route.js';
+import statusRoute from './routes/status.route.js';
 import { connectDB } from './lib/db.js';
 import { app, server } from './lib/socket.js';
+import { expireStatuses } from './controllers/status.controller.js';
 
 dotenv.config();
 
@@ -38,10 +40,20 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRoute);
 app.use("/api/messages", messageRoute);
+app.use("/api/statuses", statusRoute);
 
 const startServer = async () => {
     try {
         await connectDB();
+
+        const runStatusExpiry = () => {
+            expireStatuses().catch((error) => {
+                console.error("Status expiration task failed:", error);
+            });
+        };
+        runStatusExpiry();
+        const statusExpiryTimer = setInterval(runStatusExpiry, 60_000);
+        statusExpiryTimer.unref();
 
         server.listen(PORT, () => {
             console.log(`Server is Running on Port ${PORT}`);

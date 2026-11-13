@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { Camera, Settings } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
+import StatusAvatar from './StatusAvatar'
 
 const ProfileHeader = ({ onOpenSettings, compact = false }) => {
     const { authUser, updateProfilePicture } = useAuthStore()
@@ -23,17 +24,19 @@ const ProfileHeader = ({ onOpenSettings, compact = false }) => {
     return (
         <div className={`hama-profile-card ${compact ? 'hama-profile-card--compact' : ''}`}>
             <div className="hama-profile-avatar avatar online">
+                <StatusAvatar
+                    user={authUser}
+                    imageSrc={selectedImg || authUser?.profilepic || '/avatar.jpg'}
+                    className="hama-profile-status-avatar"
+                    onNoStatusClick={() => fileInputRef.current?.click()}
+                />
                 <button
                     type="button"
-                    className="hama-avatar-edit"
+                    className="hama-avatar-edit-overlay"
                     onClick={() => fileInputRef.current?.click()}
                     aria-label="Change profile picture"
                 >
-                    <img
-                        src={selectedImg || authUser?.profilepic || '/avatar.jpg'}
-                        alt={authUser?.fullName || 'Your profile'}
-                    />
-                    <span className="hama-avatar-camera"><Camera size={13} /></span>
+                    <Camera size={13} />
                 </button>
                 <input
                     type="file"

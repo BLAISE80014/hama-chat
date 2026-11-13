@@ -19,6 +19,34 @@ const MessageSchema = new mongoose.Schema({
     image: {
         type: String,
     },
+    mediaUrl: {
+        type: String,
+        maxlength: 2048,
+    },
+    mediaPublicId: {
+        type: String,
+        maxlength: 255,
+    },
+    mediaType: {
+        type: String,
+        enum: ["image", "video", "audio", "voice", "document", "other"],
+    },
+    mediaName: {
+        type: String,
+        maxlength: 180,
+    },
+    mediaMimeType: {
+        type: String,
+        maxlength: 120,
+    },
+    mediaSize: {
+        type: Number,
+        min: 0,
+    },
+    mediaDuration: {
+        type: Number,
+        min: 0,
+    },
     seen: {
         type: Boolean,
         default: false,
@@ -50,6 +78,10 @@ const MessageSchema = new mongoose.Schema({
     }
 
 }, { timestamps: true })
+
+MessageSchema.index({ Reciever: 1, seen: 1, Sender: 1 });
+MessageSchema.index({ Sender: 1, Reciever: 1, createdAt: -1 });
+MessageSchema.index({ Reciever: 1, createdAt: -1, mediaType: 1 });
 
 const Message = mongoose.model("Message", MessageSchema)
 

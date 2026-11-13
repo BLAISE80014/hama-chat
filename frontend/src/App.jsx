@@ -16,10 +16,7 @@ const App = () => {
     if (!socket) return;
     subscribeToMessages();
     const handleSocketConnect = () => {
-      const selectedUserId = useChatStore.getState().selectedUser?._id;
-      if (selectedUserId) {
-        useChatStore.getState().markAsSeen(selectedUserId);
-      }
+      useChatStore.getState().getMyChatPartners();
     };
     socket.on("connect", handleSocketConnect);
     socket.connect();

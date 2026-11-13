@@ -43,7 +43,6 @@ const ChatContainer = () => {
     getMessagesByUserId,
     messages,
     isMessagesLoading,
-    clearUnread,
     markAsSeen,
     editMessage,
     deleteMessage,
@@ -97,19 +96,14 @@ const ChatContainer = () => {
     if (!selectedUserId) return;
 
     getMessagesByUserId(selectedUserId);
-
-    clearUnread(selectedUserId);
-    markAsSeen(selectedUserId);
   }, [
     selectedUserId,
     getMessagesByUserId,
-    clearUnread,
-    markAsSeen,
   ]);
 
   // Mark received messages as seen
   useEffect(() => {
-    if (!selectedUserId || !Array.isArray(messages)) return;
+    if (!selectedUserId || isMessagesLoading || !Array.isArray(messages)) return;
 
     const hasUnseenMessages = messages.some(
       (msg) =>
@@ -119,7 +113,7 @@ const ChatContainer = () => {
     if (hasUnseenMessages) {
       markAsSeen(selectedUserId);
     }
-  }, [messages, selectedUserId, markAsSeen]);
+  }, [messages, selectedUserId, isMessagesLoading, markAsSeen]);
 
   // Scroll to latest message
   useEffect(() => {
@@ -249,10 +243,10 @@ const ChatContainer = () => {
                     }`}
                   >
                     {/* Message Image */}
-                    {message.image && (
+                    {(message.image || (message.mediaType === "image" && (message.mediaUrl || message.mediaData))) && (
                       <div className="relative group w-48">
                         <img
-                          src={message.image}
+                          src={message.image || message.mediaUrl || message.mediaData}
                           alt="message attachment"
                           className="hama-message-image w-48 h-48 mb-2 cursor-pointer hover:opacity-90 transition-opacity"
                           onClick={(e) => {
@@ -262,7 +256,7 @@ const ChatContainer = () => {
                         />
 
                         <a
-                          href={message.image}
+                          href={message.image || message.mediaUrl || message.mediaData}
                           download
                           target="_blank"
                           rel="noreferrer"
@@ -273,6 +267,47 @@ const ChatContainer = () => {
                         </a>
                       </div>
                     )}
+
+                    {message.mediaType === "video" && (message.mediaUrl || message.mediaData) && (
+                      <video
+                        src={message.mediaUrl || message.mediaData}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="hama-message-video"
+                        aria-label="Video attachment"
+                      />
+                    )}
+
+                    {(message.mediaType === "audio" || message.mediaType === "voice") &&
+                      (message.mediaUrl || message.mediaData) && (
+                        <div className="hama-audio-message">
+                          <audio
+                            src={message.mediaUrl || message.mediaData}
+                            controls
+                            preload="metadata"
+                            aria-label={message.mediaType === "voice" ? "Voice message" : "Audio attachment"}
+                          />
+                          {message.mediaType === "voice" && (
+                            <span>{message.mediaName || "Voice message"}</span>
+                          )}
+                        </div>
+                      )}
+
+                    {(message.mediaType === "document" || message.mediaType === "other") &&
+                      (message.mediaUrl || message.mediaData) && (
+                        <a
+                          href={message.mediaUrl || message.mediaData}
+                          download={message.mediaName || "shared-file"}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hama-message-file"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <span>{message.mediaName || "Shared file"}</span>
+                          <Download size={15} aria-hidden="true" />
+                        </a>
+                      )}
 
                     {/* Message Text */}
                     {message.text && <p>{message.text}</p>}
