@@ -72,7 +72,7 @@ const CallEventCard = ({ callEvent, peer, currentUserId }) => {
                 </div>
                 <div className="hama-call-event-details">
                     <span className="hama-call-event-peer">
-                        {peer?.profilepic && <img src={peer.profilepic} alt="" />}
+                        <img src={peer?.profilepic || "/avatar.jpg"} alt="" />
                         {isOutgoing ? "You called" : `${peer?.fullName || "Contact"} called you`}
                         {isOutgoing && peer?.fullName ? ` ${peer.fullName}` : ""}
                     </span>

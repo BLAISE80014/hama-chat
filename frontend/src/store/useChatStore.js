@@ -151,7 +151,12 @@ export const useChatStore = create((set, get) => ({
             }
         } catch (error) {
             if (requestId === callEventsRequestId) {
-                set({ callEvents: [], callEventsConversationId: conversationId });
+                set((state) => ({
+                    callEventsConversationId: conversationId,
+                    callEvents: state.callEventsConversationId === conversationId
+                        ? state.callEvents
+                        : [],
+                }));
                 toast.error(error.response?.data?.message || "Could not load call history");
             }
         } finally {
@@ -211,6 +216,17 @@ export const useChatStore = create((set, get) => ({
     markAsSeen: (senderId) => {
         const socket = useAuthStore.getState().socket;
         if (!socket?.connected || !senderId) return;
+        const { authUser } = useAuthStore.getState();
+        const messageIdsToMark = new Set(
+            get().messages
+                .filter((message) =>
+                    String(message.Sender) === String(senderId) &&
+                    String(message.Reciever) === String(authUser?._id) &&
+                    !message.seen &&
+                    !message.isDeleted
+                )
+                .map((message) => String(message._id))
+        );
 
         socket.emit("markAsSeen", { senderId: String(senderId) }, (response) => {
             if (!response?.success) {
@@ -224,7 +240,15 @@ export const useChatStore = create((set, get) => ({
                 } else {
                     delete unreadMessages[String(senderId)];
                 }
-                return { unreadMessages };
+                const seenAt = response.seenAt || new Date().toISOString();
+                return {
+                    unreadMessages,
+                    messages: state.messages.map((message) =>
+                        messageIdsToMark.has(String(message._id)) && !message.seen
+                            ? { ...message, seen: true, seenAt }
+                            : message
+                    ),
+                };
             });
         });
     },
@@ -290,7 +314,6 @@ export const useChatStore = create((set, get) => ({
             });
 
             if (!hasChat) get().getMyChatPartners();
-            if (isIncoming && isSelectedConversation) get().markAsSeen(peerId);
         };
 
         const handleUnreadCount = ({ conversationId, count } = {}) => {

@@ -74,7 +74,14 @@ const ChatList = ({ searchQuery = '' }) => {
             >
               <span className="hama-chat-row-body">
               <span className="hama-chat-row-top">
-                <strong>{chat.fullName}</strong>
+                <span className="hama-chat-row-name">
+                  <strong>{chat.fullName}</strong>
+                  {unreadMessages[chatId] > 0 && (
+                    <i className="hama-unread-dot" aria-label={`${unreadMessages[chatId]} unread messages`}>
+                      {unreadMessages[chatId] > 99 ? '99+' : unreadMessages[chatId]}
+                    </i>
+                  )}
+                </span>
                 <span className="hama-chat-time">
                   {lastMessage ? formatMessageTime(lastMessage.createdAt) : ''}
                 </span>
@@ -84,11 +91,6 @@ const ChatList = ({ searchQuery = '' }) => {
                 <span className="hama-chat-row-meta">
                   {sentByMe && lastMessage.seen && (
                     <CheckCheck size={15} className="hama-list-seen" aria-label="Seen" />
-                  )}
-                  {unreadMessages[chatId] > 0 && (
-                    <i className="hama-unread-dot" aria-label={`${unreadMessages[chatId]} unread messages`}>
-                      {unreadMessages[chatId] > 99 ? '99+' : unreadMessages[chatId]}
-                    </i>
                   )}
                 </span>
               </span>

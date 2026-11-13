@@ -517,7 +517,15 @@ body {
   gap: 5px;
 }
 
+.hama-chat-row-name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
 .hama-chat-row-top strong {
+  min-width: 0;
   overflow: hidden;
   color: var(--hama-ink);
   font-size: 12px;
@@ -839,6 +847,284 @@ body {
   background: #faf8ff;
 }
 
+.hama-profile-drawer {
+  color: var(--hama-ink);
+  background: #fff;
+}
+
+.hama-profile-drawer-heading button,
+.hama-profile-media-preview header button,
+.hama-profile-image-preview > button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #6d28d9;
+  background: #f2ecff;
+  cursor: pointer;
+}
+
+.hama-profile-drawer-content {
+  scrollbar-width: thin;
+  scrollbar-color: #c4b5fd transparent;
+}
+
+.hama-profile-image-trigger {
+  position: relative;
+  display: block;
+  width: 112px;
+  height: 112px;
+  overflow: visible;
+  padding: 0;
+  border: 3px solid #e8ddff;
+  border-radius: 50%;
+  background: #f5f0ff;
+  cursor: zoom-in;
+}
+
+.hama-profile-image-trigger img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.hama-profile-image-trigger > span {
+  position: absolute;
+  right: 0;
+  bottom: 1px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  background: #7c3aed;
+}
+
+.hama-profile-presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #85769b;
+  font-size: 12px;
+}
+
+.hama-profile-presence i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #a795c7;
+}
+
+.hama-profile-presence.is-online i {
+  background: #30b77a;
+}
+
+.hama-profile-detail {
+  color: #6d28d9;
+}
+
+.hama-profile-detail > div {
+  min-width: 0;
+}
+
+.hama-profile-detail p {
+  margin: 0;
+  color: #75658c;
+}
+
+.hama-profile-detail p + p {
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+  color: #281745;
+}
+
+.hama-profile-error,
+.hama-profile-media-message {
+  margin: 0;
+  color: #7c688f;
+  font-size: 12px;
+}
+
+.hama-profile-shared-media {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #eee7fa;
+  border-radius: 14px;
+  background: #faf8ff;
+}
+
+.hama-profile-shared-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  color: #352150;
+  font-size: 12px;
+}
+
+.hama-profile-shared-heading span {
+  color: #806b9b;
+  font-size: 11px;
+}
+
+.hama-profile-media-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.hama-profile-media-grid button {
+  position: relative;
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  color: #7c3aed;
+  background: #eee7fc;
+  cursor: pointer;
+}
+
+.hama-profile-media-grid button img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hama-profile-media-grid button > i {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: #fff;
+  background: rgba(37, 17, 66, .72);
+  font-size: 7px;
+  font-style: normal;
+}
+
+.hama-profile-block-button {
+  display: flex;
+  width: 100%;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 11px;
+  color: #a23455;
+  background: #fff0f3;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.hama-profile-block-button.is-unblock {
+  color: #268259;
+  background: #eaf8f1;
+}
+
+.hama-profile-image-preview,
+.hama-profile-media-preview {
+  position: fixed;
+  z-index: 70;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(26, 10, 52, .78);
+  backdrop-filter: blur(7px);
+}
+
+.hama-profile-image-preview > button {
+  position: absolute;
+  top: max(20px, env(safe-area-inset-top));
+  right: max(20px, env(safe-area-inset-right));
+  width: 42px;
+  height: 42px;
+  color: #fff;
+  background: rgba(255, 255, 255, .16);
+}
+
+.hama-profile-image-preview img {
+  max-width: min(88vw, 760px);
+  max-height: 84vh;
+  border-radius: 18px;
+  object-fit: contain;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, .35);
+  animation: hama-image-zoom .24s ease-out both;
+}
+
+.hama-profile-media-preview > section {
+  display: flex;
+  width: min(92vw, 640px);
+  max-height: 88vh;
+  flex-direction: column;
+  gap: 15px;
+  padding: 16px;
+  border: 1px solid #e5dafa;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, .35);
+}
+
+.hama-profile-media-preview header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #352150;
+}
+
+.hama-profile-media-preview header strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hama-profile-media-preview > section > img,
+.hama-profile-media-preview > section > video {
+  max-width: 100%;
+  max-height: 68vh;
+  align-self: center;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.hama-profile-media-preview > section > audio {
+  width: 100%;
+}
+
+.hama-profile-media-preview > section > a {
+  align-self: flex-end;
+  color: #6d28d9;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.hama-profile-media-file {
+  display: grid;
+  min-height: 160px;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  color: #7c3aed;
+}
+
+@keyframes hama-image-zoom {
+  from { opacity: 0; transform: scale(.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 .hama-settings-card input,
 .hama-settings-card select {
   border-color: #e4d8f8 !important;
@@ -940,6 +1226,10 @@ body {
   border-color: rgba(196, 181, 253, .75);
   border-bottom-right-radius: 6px;
   background: linear-gradient(120deg, #e9ddff, #d9c5ff);
+}
+
+.hama-bubble--voice {
+  max-width: min(96%, 380px);
 }
 
 .hama-bubble p {
@@ -1610,6 +1900,32 @@ body {
   cursor: pointer;
 }
 
+.hama-status-avatar-wrap {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.hama-status-avatar-wrap > .hama-status-avatar {
+  width: 100%;
+  height: 100%;
+}
+
+.hama-status-view-button {
+  position: absolute;
+  z-index: 3;
+  top: -1px;
+  right: -1px;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #c084fc, #6d28d9);
+  box-shadow: 0 1px 5px rgba(46, 16, 101, .25);
+  cursor: pointer;
+}
+
 .hama-status-avatar:disabled {
   cursor: default;
 }
@@ -1716,6 +2032,123 @@ body {
   color: var(--hama-primary);
   font-size: 11px;
   font-weight: 650;
+}
+
+.hama-voice-message {
+  display: flex;
+  min-width: min(255px, 67vw);
+  align-items: center;
+  gap: 9px;
+  margin: 4px 0 8px;
+}
+
+.hama-voice-message.is-outgoing {
+  flex-direction: row-reverse;
+}
+
+.hama-voice-avatar {
+  width: 35px;
+  height: 35px;
+  flex: 0 0 auto;
+  border: 2px solid rgba(124, 58, 237, .2);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.hama-voice-player {
+  min-width: 0;
+  flex: 1;
+}
+
+.hama-voice-player > audio {
+  display: none;
+}
+
+.hama-voice-player-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.hama-voice-player-main > button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(145deg, #8b5cf6, #6d28d9);
+  cursor: pointer;
+}
+
+.hama-voice-waveform {
+  display: flex;
+  min-width: 0;
+  height: 26px;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.hama-voice-waveform i {
+  width: 3px;
+  min-width: 2px;
+  border-radius: 4px;
+  background: #7c3aed;
+}
+
+.hama-voice-duration {
+  flex: 0 0 auto;
+  color: #6d28d9;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hama-voice-progress {
+  display: block;
+  width: 100%;
+  height: 3px;
+  margin: 4px 0 0;
+  accent-color: #7c3aed;
+  cursor: pointer;
+}
+
+.hama-voice-progress:disabled {
+  cursor: default;
+}
+
+.hama-voice-error {
+  display: block;
+  margin-top: 4px;
+  color: #a23455;
+  font-size: 10px;
+}
+
+.hama-unread-separator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  color: #745c91;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.hama-unread-separator::before,
+.hama-unread-separator::after {
+  height: 1px;
+  flex: 1;
+  background: #d9c9f3;
+  content: "";
 }
 
 .hama-message-file {
@@ -3808,5 +4241,934 @@ body {
 
   .hama-emoji-popover {
     right: -47px;
+  }
+
+  .hama-profile-drawer {
+    width: min(100vw, 22rem);
+  }
+
+  .hama-profile-drawer-content {
+    padding: 20px;
+  }
+}
+
+:root {
+  --hama-deep: #5614ad;
+  --hama-dark: #4b109c;
+  --hama-primary: #6b1fc2;
+  --hama-bright: #862de8;
+  --hama-lavender: #d5bbff;
+  --hama-light: #f0e5ff;
+  --hama-background: #f7f0ff;
+  --hama-ink: #27104e;
+  --hama-muted: #70568f;
+  --hama-online: #28c85a;
+}
+
+.hama-page {
+  justify-content: stretch;
+  padding: 0;
+  background: #f2e7ff;
+}
+
+.hama-page::before,
+.hama-page::after {
+  display: none;
+}
+
+.hama-app-shell {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  grid-template-columns: minmax(280px, 26.4%) minmax(0, 1fr);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.hama-app-shell.has-contact-profile {
+  grid-template-columns: minmax(280px, 26.4%) minmax(0, 1fr) minmax(210px, 19%);
+}
+
+.hama-left-panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 13px 8px 8px;
+  color: #fff;
+  background:
+    radial-gradient(ellipse at 2% 36%, rgba(162, 85, 255, .36), transparent 42%),
+    linear-gradient(165deg, #6d20c7 0%, #611abb 56%, #5614ad 100%);
+}
+
+.hama-left-brand-row {
+  display: flex;
+  min-height: 61px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  padding: 0 7px;
+}
+
+.hama-left-panel .hama-brand {
+  min-width: 0;
+  gap: 10px;
+  padding: 0;
+}
+
+.hama-left-panel .hama-brand-mark {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 50%;
+  color: #6920bb;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(37, 6, 82, .17);
+}
+
+.hama-left-panel .hama-brand-copy strong {
+  font-size: clamp(17px, 1.65vw, 23px);
+  letter-spacing: -.04em;
+}
+
+.hama-left-panel .hama-brand-copy small {
+  color: #ead9ff;
+  font-size: 10px;
+  font-style: italic;
+}
+
+.hama-left-panel .hama-new-chat {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(255, 255, 255, .13);
+  box-shadow: none;
+}
+
+.hama-left-panel .hama-new-chat:hover {
+  background: rgba(255, 255, 255, .23);
+  box-shadow: none;
+}
+
+.hama-left-panel .hama-search {
+  height: 41px;
+  margin: 11px 8px 8px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 255, 255, .58);
+  border-radius: 999px;
+  color: #6420b9;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(45, 10, 86, .1);
+}
+
+.hama-left-panel .hama-search input {
+  font-size: 12px;
+}
+
+.hama-left-panel .hama-search input::placeholder {
+  color: #8065a2;
+}
+
+.hama-left-panel .hama-conversation-list {
+  padding: 3px 0 8px;
+}
+
+.hama-left-panel .hama-chat-list {
+  gap: 3px;
+}
+
+.hama-left-panel .hama-chat-row {
+  min-height: 67px;
+  gap: 10px;
+  padding: 8px 9px;
+  border-radius: 14px;
+}
+
+.hama-left-panel .hama-chat-row:hover {
+  background: rgba(255, 255, 255, .1);
+}
+
+.hama-left-panel .hama-chat-row.is-selected {
+  background: linear-gradient(100deg, #eadbff, #d9c0ff);
+  box-shadow: inset 3px 0 0 #fff;
+}
+
+.hama-left-panel .hama-list-avatar {
+  width: 49px;
+  height: 49px;
+}
+
+.hama-left-panel .hama-list-avatar img {
+  border: 2px solid rgba(255, 255, 255, .9);
+}
+
+.hama-left-panel .hama-chat-row-top {
+  gap: 4px;
+}
+
+.hama-left-panel .hama-chat-row-top strong {
+  color: #fff;
+  font-size: 13px;
+}
+
+.hama-left-panel .hama-chat-row.is-selected .hama-chat-row-top strong,
+.hama-left-panel .hama-chat-row.is-selected .hama-chat-preview,
+.hama-left-panel .hama-chat-row.is-selected .hama-chat-time {
+  color: #34105e;
+}
+
+.hama-left-panel .hama-chat-time {
+  color: #e5d1ff;
+  font-size: 10px;
+}
+
+.hama-left-panel .hama-chat-preview {
+  color: #e7d8fa;
+  font-size: 11px;
+}
+
+.hama-left-panel .hama-list-seen {
+  color: #92f5ff;
+}
+
+.hama-left-panel .hama-unread-dot {
+  min-width: 20px;
+  height: 20px;
+}
+
+.hama-left-panel .hama-empty-list {
+  color: #e9d8ff;
+}
+
+.hama-left-panel .hama-empty-list strong {
+  color: #fff;
+}
+
+.hama-left-footer {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 7px;
+  padding: 4px 1px 0;
+}
+
+.hama-premium-banner {
+  display: flex;
+  min-height: 55px;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, .28);
+  border-radius: 13px;
+  color: #fff;
+  background: linear-gradient(110deg, #942be8, #7421d0);
+  box-shadow: 0 7px 16px rgba(38, 5, 83, .24);
+}
+
+.hama-premium-crown {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: #ffd84d;
+}
+
+.hama-premium-banner > span:nth-child(2) {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hama-premium-banner strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hama-premium-banner small {
+  color: #f0dcff;
+  font-size: 10px;
+}
+
+.hama-left-account-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+}
+
+.hama-left-account-actions .hama-profile-card {
+  min-height: 43px;
+  flex: 1;
+  gap: 7px;
+  margin: 0;
+  padding: 1px 4px;
+  border: 0;
+  background: transparent;
+}
+
+.hama-left-account-actions .hama-profile-avatar,
+.hama-left-account-actions .hama-profile-status-avatar {
+  width: 37px;
+  height: 37px;
+}
+
+.hama-left-account-actions .hama-profile-copy strong {
+  font-size: 11px;
+}
+
+.hama-left-account-actions .hama-profile-copy span {
+  font-size: 10px;
+}
+
+.hama-left-account-actions .hama-profile-settings {
+  display: none;
+}
+
+.hama-left-account-actions > button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 10px;
+  color: #f5eaff;
+  background: rgba(255, 255, 255, .1);
+  cursor: pointer;
+}
+
+.hama-left-account-actions > button:hover {
+  background: rgba(255, 255, 255, .2);
+}
+
+.hama-bottom-navigation {
+  display: flex;
+  min-height: 56px;
+  align-items: stretch;
+  gap: 2px;
+  padding-top: 3px;
+  border-top: 1px solid rgba(255, 255, 255, .15);
+}
+
+.hama-bottom-navigation .hama-sidebar-nav {
+  min-width: 0;
+  flex: 1;
+  flex-direction: row;
+  justify-content: space-around;
+  gap: 1px;
+  margin: 0;
+}
+
+.hama-bottom-navigation .hama-nav-link,
+.hama-bottom-nav-settings {
+  display: flex;
+  min-width: 0;
+  min-height: 51px;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 3px 1px;
+  border: 0;
+  border-radius: 10px;
+  color: #e6d3ff;
+  background: transparent;
+  font-size: 9px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.hama-bottom-navigation .hama-nav-link span,
+.hama-bottom-navigation .hama-sidebar-nav--compact .hama-nav-link span {
+  display: block;
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+
+.hama-bottom-navigation .hama-nav-link.is-active {
+  color: #fff;
+  background: rgba(255, 255, 255, .16);
+  box-shadow: none;
+}
+
+.hama-bottom-nav-settings {
+  cursor: pointer;
+}
+
+.hama-bottom-navigation .hama-nav-link:hover,
+.hama-bottom-nav-settings:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, .12);
+}
+
+.hama-conversation-view {
+  border-left: 1px solid #e4d7f4;
+  background: #f3eaff;
+}
+
+.hama-chat-area {
+  background: #f4eaff;
+}
+
+.hama-chat-area::before,
+.hama-chat-area::after {
+  display: none;
+}
+
+.hama-chat-header {
+  min-height: 72px;
+  padding: 0 18px;
+  border-bottom-color: #e3d3f8;
+  background: rgba(255, 255, 255, .82);
+  backdrop-filter: blur(15px);
+}
+
+.hama-chat-person {
+  gap: 12px;
+}
+
+.hama-chat-person-avatar {
+  width: 56px;
+  height: 56px;
+}
+
+.hama-chat-person-copy strong {
+  color: #27104e;
+  font-size: 17px;
+}
+
+.hama-chat-person-copy span {
+  color: #7553a7;
+  font-size: 12px;
+}
+
+.hama-header-actions {
+  gap: 8px;
+}
+
+.hama-call-header-button {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(145deg, #8b2be2, #6b1fc2);
+  box-shadow: 0 4px 10px rgba(91, 24, 162, .2);
+}
+
+.hama-call-header-button:hover {
+  color: #fff;
+  background: linear-gradient(145deg, #9a3aea, #7829d0);
+  box-shadow: 0 6px 14px rgba(91, 24, 162, .28);
+}
+
+.hama-header-actions .hama-header-close {
+  border-radius: 50%;
+}
+
+.hama-message-scroll {
+  position: relative;
+  isolation: isolate;
+  background-color: #f1e7ff;
+  background-image:
+    radial-gradient(ellipse at 80% 10%, rgba(255, 255, 255, .75), transparent 34%),
+    linear-gradient(145deg, #f3eaff, #ecdfff 55%, #f5edff);
+  scroll-behavior: smooth;
+}
+
+.hama-message-scroll::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='160' viewBox='0 0 180 160'%3E%3Cg fill='none' stroke='%237c3aed' stroke-opacity='.105' stroke-width='2'%3E%3Cpath d='M25 25h34a9 9 0 019 9v14a9 9 0 01-9 9H44l-9 9v-9h-10a9 9 0 01-9-9V34a9 9 0 019-9z'/%3E%3Ccircle cx='122' cy='38' r='13'/%3E%3Cpath d='M118 36h8m-8 5h6M78 105l20-18 17 14 17-22 18 26z'/%3E%3Cpath d='M34 119c-12-10-25-3-18 8l18 15 18-15c7-11-6-18-18-8z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 180px 160px;
+  content: "";
+  pointer-events: none;
+}
+
+.hama-message-list {
+  gap: 14px;
+}
+
+.hama-message-list .message-item.chat {
+  animation: hama-message-enter .2s ease-out both;
+}
+
+@keyframes hama-message-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hama-bubble {
+  border-color: rgba(219, 205, 241, .92);
+  border-radius: 19px;
+  box-shadow: 0 5px 16px rgba(76, 35, 122, .11);
+}
+
+.hama-bubble--received {
+  border-bottom-left-radius: 6px;
+  background: rgba(255, 255, 255, .96);
+}
+
+.hama-bubble--sent {
+  border-color: rgba(145, 66, 227, .48);
+  border-bottom-right-radius: 6px;
+  color: #fff;
+  background: linear-gradient(130deg, #8c20dc, #6b13bd);
+  box-shadow: 0 6px 17px rgba(96, 27, 159, .2);
+}
+
+.hama-bubble--sent .hama-message-time,
+.hama-bubble--sent .hama-message-edited {
+  color: #ead8ff;
+}
+
+.hama-bubble--sent .hama-seen-tick {
+  color: #91f3ff;
+}
+
+.hama-message-time {
+  font-variant-numeric: tabular-nums;
+}
+
+.hama-seen-tick {
+  color: #46cce1;
+}
+
+.hama-bubble--sent .hama-voice-waveform i {
+  background: #fff;
+}
+
+.hama-bubble--sent .hama-voice-duration {
+  color: #fff;
+}
+
+.hama-bubble--sent .hama-voice-player-main > button {
+  color: #7420c4;
+  background: #fff;
+}
+
+.hama-bubble--sent .hama-voice-progress {
+  accent-color: #fff;
+}
+
+.hama-unread-separator {
+  gap: 0;
+  margin: 11px 0;
+  color: #56199d;
+  letter-spacing: .015em;
+}
+
+.hama-unread-separator::before,
+.hama-unread-separator::after {
+  background: linear-gradient(90deg, transparent, #c9a9ee);
+}
+
+.hama-unread-separator::after {
+  background: linear-gradient(90deg, #c9a9ee, transparent);
+}
+
+.hama-unread-separator span {
+  padding: 8px 15px;
+  border: 1px solid #d5b9f4;
+  border-radius: 999px;
+  background: rgba(249, 242, 255, .9);
+  box-shadow: 0 3px 10px rgba(85, 36, 132, .1);
+}
+
+.hama-composer {
+  padding: 8px 16px 13px;
+  border-top-color: #e5d5f7;
+  background: rgba(255, 255, 255, .58);
+  backdrop-filter: blur(10px);
+}
+
+.hama-message-form {
+  min-height: 52px;
+  gap: 8px;
+  padding: 4px 5px 4px 9px;
+  border: 1px solid #e0cff5;
+  border-radius: 999px;
+  box-shadow: 0 5px 18px rgba(77, 35, 128, .14);
+}
+
+.hama-message-form:focus-within {
+  border-color: #aa7ce5;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, .1), 0 7px 20px rgba(77, 35, 128, .12);
+}
+
+.hama-attach-button,
+.hama-emoji-button,
+.hama-voice-record-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #711fc1;
+  transition: color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.hama-attach-button {
+  color: #fff;
+  background: linear-gradient(145deg, #8b2be2, #6b1fc2);
+  box-shadow: 0 3px 8px rgba(91, 24, 162, .2);
+}
+
+.hama-attach-button:hover:not(:disabled) {
+  color: #fff;
+  background: linear-gradient(145deg, #9a3aea, #7829d0);
+}
+
+.hama-image-button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #711fc1;
+  background: transparent;
+  cursor: pointer;
+  transition: color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.hama-image-button:hover:not(:disabled) {
+  color: #5a139f;
+  background: #f0e4ff;
+  transform: translateY(-1px);
+}
+
+.hama-image-button:disabled,
+.hama-attach-button:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
+.hama-attach-button:hover,
+.hama-emoji-button:hover,
+.hama-voice-record-button:hover:not(:disabled) {
+  color: #5a139f;
+  background: #f0e4ff;
+  transform: translateY(-1px);
+}
+
+.hama-message-field {
+  font-size: 13px;
+}
+
+.hama-message-field::placeholder {
+  color: #8870aa;
+}
+
+.hama-send-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #8a27df, #6416b8);
+  box-shadow: 0 5px 13px rgba(91, 24, 162, .29);
+}
+
+.hama-send-button:hover:not(:disabled) {
+  transform: translateY(-1px) scale(1.03);
+}
+
+.hama-call-event {
+  border-color: #e3d2f7;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .9);
+  box-shadow: 0 5px 17px rgba(75, 35, 122, .13);
+}
+
+.hama-call-event-icon {
+  border-color: #e0cafa;
+  color: #7021c1;
+  background: linear-gradient(145deg, #f1e2ff, #e6d0ff);
+}
+
+.hama-call-event-icon.is-video {
+  color: #fff;
+  background: linear-gradient(145deg, #8c2be3, #6b1fc2);
+}
+
+.hama-call-event.is-missed .hama-call-event-status {
+  color: #c43b5b;
+}
+
+.hama-call-event > time {
+  color: #70568f;
+}
+
+.hama-profile-drawer--docked {
+  position: relative;
+  z-index: 2;
+  width: auto;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 0;
+  border-left: 1px solid #dfcef3;
+  border-radius: 0;
+  box-shadow: -4px 0 18px rgba(66, 30, 106, .07);
+  background: rgba(255, 255, 255, .92);
+  animation: hama-profile-enter .22s ease-out both;
+}
+
+.hama-profile-drawer--docked .hama-profile-drawer-heading {
+  min-height: 45px;
+  padding: 6px 11px;
+}
+
+.hama-profile-drawer--docked .hama-profile-drawer-heading h2 {
+  color: #39126d;
+  font-size: 13px;
+}
+
+.hama-profile-drawer--docked .hama-profile-drawer-content {
+  gap: 8px;
+  padding: 15px 12px;
+}
+
+.hama-profile-drawer--docked .hama-profile-image-trigger {
+  width: clamp(86px, 10vw, 122px);
+  height: clamp(86px, 10vw, 122px);
+}
+
+.hama-profile-drawer--docked .hama-profile-image-trigger > span {
+  width: 26px;
+  height: 26px;
+}
+
+.hama-profile-drawer--docked .hama-profile-drawer-content h3 {
+  color: #27104e;
+  font-size: 18px;
+}
+
+.hama-profile-drawer--docked .hama-profile-detail {
+  gap: 8px;
+  padding: 9px;
+  border-radius: 10px;
+}
+
+.hama-profile-drawer--docked .hama-profile-detail svg {
+  width: 16px;
+  flex: 0 0 auto;
+}
+
+.hama-profile-actions {
+  position: relative;
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  gap: 12px;
+  margin: 1px 0 4px;
+}
+
+.hama-profile-actions > button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(145deg, #8c29e2, #6719bc);
+  box-shadow: 0 4px 10px rgba(92, 24, 158, .2);
+  cursor: pointer;
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.hama-profile-actions > button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(92, 24, 158, .3);
+}
+
+.hama-profile-more-menu {
+  position: absolute;
+  z-index: 3;
+  top: 43px;
+  right: 2px;
+  min-width: 160px;
+  padding: 5px;
+  border: 1px solid #e8dcf5;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(50, 20, 84, .16);
+}
+
+.hama-profile-more-menu button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  border: 0;
+  border-radius: 8px;
+  color: #5e1d9e;
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  text-align: left;
+}
+
+.hama-profile-more-menu button:hover {
+  background: #f5edff;
+}
+
+.hama-profile-shared-heading {
+  gap: 6px;
+}
+
+.hama-profile-shared-heading strong {
+  flex: 1;
+  color: #321154;
+}
+
+.hama-profile-shared-heading button {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 0;
+  color: #6b1fc2;
+  background: transparent;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.hama-profile-drawer--docked .hama-profile-shared-media {
+  padding: 9px;
+  border-radius: 11px;
+}
+
+.hama-profile-drawer--docked .hama-profile-media-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+@keyframes hama-profile-enter {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 1050px) and (min-width: 768px) {
+  .hama-app-shell,
+  .hama-app-shell.has-contact-profile,
+  .hama-page--tablet .hama-app-shell {
+    grid-template-columns: minmax(252px, 34%) minmax(0, 1fr);
+  }
+
+  .hama-left-panel {
+    padding: 11px 7px 7px;
+  }
+
+  .hama-left-panel .hama-brand-mark {
+    width: 43px;
+    height: 43px;
+  }
+
+  .hama-left-panel .hama-brand-copy strong {
+    font-size: 18px;
+  }
+
+  .hama-left-panel .hama-list-avatar {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (max-width: 767px) {
+  .hama-page {
+    padding: 0;
+  }
+
+  .hama-mobile-page {
+    background: linear-gradient(155deg, #f5edff, #ece0ff);
+  }
+
+  .hama-mobile-top {
+    background: linear-gradient(110deg, #6d20c7, #5814ae);
+  }
+
+  .hama-mobile-top .hama-brand-mark {
+    border-radius: 50%;
+    color: #6b1fc2;
+    background: #fff;
+  }
+
+  .hama-chat-header {
+    min-height: 66px;
+    padding: 0 10px;
+  }
+
+  .hama-chat-person-avatar {
+    width: 46px;
+    height: 46px;
+  }
+
+  .hama-chat-person-copy strong {
+    font-size: 14px;
+  }
+
+  .hama-message-scroll {
+    padding: 11px 9px;
+  }
+
+  .hama-message-list {
+    gap: 11px;
+  }
+
+  .hama-bubble {
+    max-width: 86%;
+    padding: 9px 11px 7px;
+    font-size: 13px;
+  }
+
+  .hama-bubble--voice {
+    max-width: 96%;
+  }
+
+  .hama-composer {
+    padding: 7px 9px 10px;
+  }
+
+  .hama-message-form {
+    min-height: 48px;
+    gap: 4px;
+    padding-left: 5px;
+  }
+
+  .hama-attach-button,
+  .hama-emoji-button,
+  .hama-image-button,
+  .hama-voice-record-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .hama-send-button {
+    width: 41px;
+    height: 41px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hama-message-list .message-item.chat,
+  .hama-profile-drawer--docked {
+    animation: none;
   }
 }

@@ -1,4 +1,4 @@
-import { FileText, Mic, Paperclip, Send, Shield, Smile, StopCircle, Trash2, XIcon } from 'lucide-react'
+import { FileText, Image as ImageIcon, Mic, Plus, Send, Shield, Smile, StopCircle, Trash2, XIcon } from 'lucide-react'
 import React, { Suspense, lazy, useRef, useState, useEffect, useLayoutEffect, useCallback } from 'react'
 import { useChatStore } from '../store/useChatStore';
 import toast from 'react-hot-toast';
@@ -511,7 +511,7 @@ const handleSendMessage = (e) => {
                     disabled={recordingState !== 'idle' || Boolean(voicePreview)}
                     className='hama-attach-button'
                     aria-label="Attach a file">
-                    <Paperclip size={isMobile ? 19 : 23} />
+                    <Plus size={isMobile ? 20 : 23} />
                 </button>
 
                 <input
@@ -567,6 +567,17 @@ const handleSendMessage = (e) => {
                         </div>
                     )}
                 </div>
+
+                <button
+                    type="button"
+                    className="hama-image-button"
+                    onClick={() => FileInputRef.current?.click()}
+                    disabled={recordingState !== 'idle' || Boolean(voicePreview)}
+                    aria-label="Attach an image or file"
+                    title="Attach an image or file"
+                >
+                    <ImageIcon size={isMobile ? 19 : 22} />
+                </button>
 
                 <button
                     type="button"

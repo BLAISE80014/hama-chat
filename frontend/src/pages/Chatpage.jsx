@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { LogOut, MessageCircleMore, Search, Settings, SquarePen } from 'lucide-react'
+import { ChevronRight, Crown, LogOut, MessageCircleMore, Search, Settings, SquarePen } from 'lucide-react'
 import { useChatStore } from '../store/useChatStore'
 import { useAuthStore } from '../store/useAuthStore'
 import ProfileHeader from '../components/ProfileHeader'
@@ -28,6 +28,11 @@ const Chatpage = () => {
   const activeViewerUserId = useStatusStore((state) => state.activeViewerUserId)
   const isFeaturePage = ActiveTab === 'media' || ActiveTab === 'status'
   const featurePage = ActiveTab === 'media' ? <MediaLibrary /> : <StatusPage />
+  const showDockedProfile = Boolean(
+    selectedUser &&
+    !isFeaturePage &&
+    !isTablet
+  )
 
   useEffect(() => {
     if (!socket) return undefined
@@ -35,9 +40,9 @@ const Chatpage = () => {
     return subscribeToStatusEvents()
   }, [socket, loadStatuses, subscribeToStatusEvents])
 
-  const conversationList = ActiveTab === 'chats'
-    ? <ChatList searchQuery={searchQuery} />
-    : <ContactList searchQuery={searchQuery} />
+  const conversationList = ActiveTab === 'contacts'
+    ? <ContactList searchQuery={searchQuery} />
+    : <ChatList searchQuery={searchQuery} />
 
   const listPanel = (
     <section className="hama-conversations">
@@ -59,7 +64,7 @@ const Chatpage = () => {
           type="search"
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder={ActiveTab === 'chats' ? 'Search conversations...' : 'Search contacts...'}
+          placeholder={ActiveTab === 'contacts' ? 'Search contacts...' : 'Search conversations...'}
           aria-label="Search conversations and contacts"
         />
       </label>
@@ -67,6 +72,76 @@ const Chatpage = () => {
         {conversationList}
       </div>
     </section>
+  )
+
+  const desktopSidebar = (
+    <aside className="hama-left-panel">
+      <header className="hama-left-brand-row">
+        <div className="hama-brand">
+          <span className="hama-brand-mark"><MessageCircleMore size={25} /></span>
+          <span className="hama-brand-copy">
+            <strong>Hama Chat</strong>
+            <small>Chat · Connect · Share</small>
+          </span>
+        </div>
+        <button
+          type="button"
+          className="hama-new-chat"
+          onClick={() => setActiveTab('contacts')}
+          aria-label="Start a new chat"
+          title="Start a new chat"
+        >
+          <SquarePen size={17} />
+        </button>
+      </header>
+
+      <label className="hama-search">
+        <Search size={18} aria-hidden="true" />
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder={ActiveTab === 'contacts' ? 'Search contacts...' : 'Search conversations...'}
+          aria-label="Search conversations and contacts"
+        />
+      </label>
+
+      <div className="hama-conversation-list custom-scroll">
+        {conversationList}
+      </div>
+
+      <div className="hama-left-footer">
+        <div className="hama-premium-banner" aria-label="Hama Chat Premium">
+          <span className="hama-premium-crown"><Crown size={24} fill="currentColor" /></span>
+          <span>
+            <strong>Hama Chat Premium</strong>
+            <small>Chat better, together!</small>
+          </span>
+          <ChevronRight size={20} aria-hidden="true" />
+        </div>
+
+        <div className="hama-left-account-actions">
+          <ProfileHeader onOpenSettings={() => setIsSettingsOpen(true)} />
+          <button type="button" onClick={logout} aria-label="Log out" title="Log out">
+            <LogOut size={18} />
+          </button>
+        </div>
+
+        <div className="hama-bottom-navigation">
+          <ActiveTabSwitch />
+          <button
+            type="button"
+            className="hama-bottom-nav-settings"
+            onClick={() => setIsSettingsOpen(true)}
+            aria-label="Settings"
+            title="Settings"
+          >
+            <Settings size={19} />
+            <span>Settings</span>
+          </button>
+        </div>
+      </div>
+    </aside>
   )
 
   if (isMobile) {
@@ -112,75 +187,20 @@ const Chatpage = () => {
 
   return (
     <div className={`hama-page ${isTablet ? 'hama-page--tablet' : ''}`}>
-      <div className={`hama-app-shell ${isTablet ? 'hama-app-shell--tablet' : ''}`}>
-        <ReceiverProfileDrawer />
-        <aside className="hama-sidebar">
-          {!isTablet && (
-            <div className="hama-brand">
-              <span className="hama-brand-mark"><MessageCircleMore size={24} /></span>
-              <span className="hama-brand-copy">
-                <strong>Hama Chat</strong>
-                <small>Connect · Chat · Share</small>
-              </span>
-            </div>
-          )}
-          {isTablet && (
-            <div className="hama-brand hama-brand--compact" title="Hama Chat">
-              <span className="hama-brand-mark"><MessageCircleMore size={23} /></span>
-            </div>
-          )}
-          <ActiveTabSwitch />
-          {!isTablet && (
-            <div className="hama-sidebar-nav hama-sidebar-nav--secondary">
-              <button
-                type="button"
-                className="hama-nav-link"
-                onClick={() => setIsSettingsOpen(true)}
-              >
-                <Settings size={21} />
-                <span>Settings</span>
-              </button>
-              <button type="button" className="hama-nav-link" onClick={logout}>
-                <LogOut size={21} />
-                <span>Logout</span>
-              </button>
-            </div>
-          )}
-          {isTablet && (
-            <div className="hama-sidebar-nav hama-sidebar-nav--secondary hama-sidebar-nav--compact">
-              <button
-                type="button"
-                className="hama-nav-link"
-                onClick={() => setIsSettingsOpen(true)}
-                title="Settings"
-                aria-label="Settings"
-              >
-                <Settings size={21} />
-              </button>
-              <button
-                type="button"
-                className="hama-nav-link"
-                onClick={logout}
-                title="Logout"
-                aria-label="Logout"
-              >
-                <LogOut size={21} />
-              </button>
-            </div>
-          )}
-          <ProfileHeader onOpenSettings={() => setIsSettingsOpen(true)} compact={isTablet} />
-        </aside>
+      <div className={`hama-app-shell ${isTablet ? 'hama-app-shell--tablet' : ''} ${showDockedProfile ? 'has-contact-profile' : ''}`}>
+        {desktopSidebar}
         {isFeaturePage ? (
           <main className="hama-feature-workspace">{featurePage}</main>
         ) : (
-          <>
-            {listPanel}
-            <main className="hama-conversation-view">
-              {selectedUser ? <ChatContainer /> : <NoChatConversation />}
-            </main>
-          </>
+          <main className="hama-conversation-view">
+            {selectedUser ? <ChatContainer /> : <NoChatConversation />}
+          </main>
+        )}
+        {showDockedProfile && (
+          <ReceiverProfileDrawer docked />
         )}
       </div>
+      {isTablet && <ReceiverProfileDrawer />}
       <CallOverlay />
       <StatusViewer key={activeViewerUserId || 'closed'} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />

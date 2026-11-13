@@ -458,7 +458,7 @@ io.on("connection", (socket) => {
                     count: unreadCount,
                 });
             });
-            callback?.({ success: true, updatedCount: result.modifiedCount, unreadCount });
+            callback?.({ success: true, updatedCount: result.modifiedCount, unreadCount, seenAt });
         } catch (error) {
             console.error("Error in markAsSeen:", error);
             callback?.({ success: false, message: "Could not mark messages as read" });

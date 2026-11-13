@@ -28,7 +28,8 @@ export const getAllContact = async (req, res) => {
     try {
         const loggedUser = req.user._id;
 
-        const FilterUser = await User.find({ _id: { $ne: loggedUser } }).select("-password")
+        const FilterUser = await User.find({ _id: { $ne: loggedUser } })
+            .select("fullName profilepic bio profession createdAt");
 
         res.status(200).json(FilterUser)
     } catch (error) {
@@ -182,7 +183,7 @@ export const getChatsPartners = async (req, res) => {
         ]);
         const chatPartnerIds = activity.map(({ _id }) => _id);
         const chatPartners = await User.find({ _id: { $in: chatPartnerIds } })
-            .select("-password")
+            .select("fullName profilepic bio profession createdAt")
             .lean();
         const activityById = new Map(activity.map((item) => [String(item._id), item]));
         const partnersById = new Map(chatPartners.map((user) => [String(user._id), user]));
@@ -218,7 +219,8 @@ export const getChatsPartners = async (req, res) => {
 
 export const getUserProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).select("-password");
+        const user = await User.findById(req.params.id)
+            .select("fullName profilepic bio profession createdAt");
         if (!user) return res.status(404).json({ message: "User not found" });
         res.status(200).json(user);
     } catch (error) {

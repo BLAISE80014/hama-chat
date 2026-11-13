@@ -109,7 +109,7 @@ const ChatHeader = () => {
                         user={selectedUser}
                         online={isSelectedUserOnline}
                         className="hama-chat-person-avatar"
-                        onNoStatusClick={() => setShowReceiverProfile(true)}
+                        onAvatarClick={() => setShowReceiverProfile(true)}
                     />
                     <button
                         type="button"
@@ -127,21 +127,21 @@ const ChatHeader = () => {
                 <div className="hama-header-actions">
                     <button
                         type="button"
-                        onClick={() => startCall(selectedUser, 'audio')}
-                        aria-label={`Start voice call with ${selectedUser?.fullName || 'contact'}`}
-                        title="Voice call"
-                        className="hama-call-header-button"
-                    >
-                        <Phone size={20} aria-hidden="true" />
-                    </button>
-                    <button
-                        type="button"
                         onClick={() => startCall(selectedUser, 'video')}
                         aria-label={`Start video call with ${selectedUser?.fullName || 'contact'}`}
                         title="Video call"
                         className="hama-call-header-button"
                     >
                         <Video size={21} aria-hidden="true" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => startCall(selectedUser, 'audio')}
+                        aria-label={`Start voice call with ${selectedUser?.fullName || 'contact'}`}
+                        title="Voice call"
+                        className="hama-call-header-button"
+                    >
+                        <Phone size={20} aria-hidden="true" />
                     </button>
                     <button
                         type="button"

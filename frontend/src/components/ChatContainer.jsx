@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import ChatHeader from "./ChatHeader";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
@@ -7,7 +7,103 @@ import NoChatHistoryPlaceHolder from "./NoChatHistoryPlaceHolder";
 import MessagesLoadingSkeleton from "./MessagesLoadingSkeleton";
 import MessageInput from "./MessageInput";
 import CallEventCard from "./CallEventCard";
-import { CheckCheck, Check, X, Download } from "lucide-react";
+import { CheckCheck, Check, X, Download, Pause, Play } from "lucide-react";
+
+const waveformBars = [7, 11, 16, 10, 20, 13, 8, 17, 23, 12, 18, 9, 14, 21, 11, 7, 16, 24, 13, 18, 10, 15, 22, 8, 17, 12, 20, 9, 14, 19, 11, 7];
+
+const formatAudioTime = (seconds) => {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+};
+
+const VoiceMessagePlayer = ({ src, name, duration: initialDuration, avatar, senderName, isOutgoing }) => {
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(Number(initialDuration) || 0);
+  const [playbackError, setPlaybackError] = useState("");
+  const progress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
+
+  const togglePlayback = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setPlaybackError("");
+    if (audio.paused) {
+      try {
+        await audio.play();
+      } catch {
+        setPlaybackError("Unable to play this voice message.");
+      }
+    } else {
+      audio.pause();
+    }
+  };
+
+  const seek = (event) => {
+    const audio = audioRef.current;
+    if (!audio || !Number.isFinite(audio.duration)) return;
+    const nextTime = Number(event.target.value);
+    audio.currentTime = nextTime;
+    setCurrentTime(nextTime);
+  };
+
+  return (
+    <div className={`hama-voice-message ${isOutgoing ? "is-outgoing" : ""}`}>
+      <img className="hama-voice-avatar" src={avatar || "/avatar.jpg"} alt={senderName || "Sender"} />
+      <div className="hama-voice-player">
+        <audio
+          ref={audioRef}
+          src={src}
+          preload="metadata"
+          onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+          onLoadedMetadata={(event) => {
+            if (Number.isFinite(event.currentTarget.duration)) {
+              setDuration(event.currentTarget.duration);
+            }
+          }}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => {
+            setIsPlaying(false);
+            setCurrentTime(0);
+          }}
+          aria-label={name || "Voice message"}
+        />
+        <div className="hama-voice-player-main">
+          <button type="button" onClick={togglePlayback} aria-label={isPlaying ? "Pause voice message" : "Play voice message"}>
+            {isPlaying ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
+          </button>
+          <div className="hama-voice-waveform" aria-hidden="true">
+            {waveformBars.map((height, index) => (
+              <i
+                key={`${height}-${index}`}
+                style={{
+                  height: `${height}px`,
+                  opacity: index / waveformBars.length <= progress ? 1 : 0.42,
+                }}
+              />
+            ))}
+          </div>
+          <span className="hama-voice-duration">{formatAudioTime(duration || currentTime)}</span>
+        </div>
+        <input
+          className="hama-voice-progress"
+          type="range"
+          min="0"
+          max={duration || 1}
+          step="0.1"
+          value={Math.min(currentTime, duration || 1)}
+          onChange={seek}
+          disabled={!duration}
+          aria-label="Voice message progress"
+        />
+        {playbackError && <span className="hama-voice-error" role="status">{playbackError}</span>}
+      </div>
+    </div>
+  );
+};
 
 // Seen ticks component
 const SeenTicks = ({ message, isMyMessage }) => {
@@ -90,6 +186,13 @@ const ChatContainer = () => {
     String(typingState.senderId) === String(selectedUserId) &&
     String(typingState.conversationId) === String(selectedUserId) &&
     String(typingState.senderId) !== String(authUser?._id);
+  const unreadMessages = messages.filter(
+    (message) =>
+      String(message.Sender) === String(selectedUserId) &&
+      !message.seen &&
+      !message.isDeleted
+  );
+  const firstUnreadMessageId = unreadMessages[0]?._id;
 
   // Listen for edit and delete actions
   useEffect(() => {
@@ -123,19 +226,37 @@ const ChatContainer = () => {
     getCallEventsByUserId,
   ]);
 
-  // Mark received messages as seen
-  useEffect(() => {
-    if (!selectedUserId || isMessagesLoading || !Array.isArray(messages)) return;
+  const markVisibleMessagesAsRead = useCallback(() => {
+    if (
+      !selectedUserId ||
+      isMessagesLoading ||
+      document.visibilityState !== "visible" ||
+      !document.hasFocus() ||
+      !Array.isArray(messages)
+    ) {
+      return;
+    }
 
     const hasUnseenMessages = messages.some(
-      (msg) =>
-        String(msg.Sender) === String(selectedUserId) && !msg.seen
+      (message) =>
+        String(message.Sender) === String(selectedUserId) &&
+        !message.seen &&
+        !message.isDeleted
     );
+    if (hasUnseenMessages) markAsSeen(selectedUserId);
+  }, [isMessagesLoading, markAsSeen, messages, selectedUserId]);
 
-    if (hasUnseenMessages) {
-      markAsSeen(selectedUserId);
-    }
-  }, [messages, selectedUserId, isMessagesLoading, markAsSeen]);
+  useEffect(() => {
+    markVisibleMessagesAsRead();
+    document.addEventListener("visibilitychange", markVisibleMessagesAsRead);
+    window.addEventListener("focus", markVisibleMessagesAsRead);
+    socket?.on("connect", markVisibleMessagesAsRead);
+    return () => {
+      document.removeEventListener("visibilitychange", markVisibleMessagesAsRead);
+      window.removeEventListener("focus", markVisibleMessagesAsRead);
+      socket?.off("connect", markVisibleMessagesAsRead);
+    };
+  }, [markVisibleMessagesAsRead, socket]);
 
   // Scroll to latest message
   useEffect(() => {
@@ -249,29 +370,36 @@ const ChatContainer = () => {
                 String(message.Sender) === String(authUser?._id);
 
               return (
-                <div
-                  key={entry.id}
-                  className={`message-item chat ${
-                    isMyMessage ? "chat-end" : "chat-start"
-                  }`}
-                  onClick={() => {
-                    if (
-                      !isMyMessage ||
-                      message.isOptimistic ||
-                      message.isDeleted
-                    ) {
-                      return;
-                    }
+                <React.Fragment key={entry.id}>
+                  {String(message._id) === String(firstUnreadMessageId) && (
+                    <div className="hama-unread-separator" role="separator">
+                      <span>
+                        {unreadMessages.length} unread {unreadMessages.length === 1 ? 'message' : 'messages'}
+                      </span>
+                    </div>
+                  )}
+                  <div
+                    className={`message-item chat ${
+                      isMyMessage ? "chat-end" : "chat-start"
+                    }`}
+                    onClick={() => {
+                      if (
+                        !isMyMessage ||
+                        message.isOptimistic ||
+                        message.isDeleted
+                      ) {
+                        return;
+                      }
 
-                    setSelectedMessage(
-                      selectedMessageId === message._id ? null : message
-                    );
-                  }}
-                >
+                      setSelectedMessage(
+                        selectedMessageId === message._id ? null : message
+                      );
+                    }}
+                  >
                   <div
                     className={`hama-bubble cursor-pointer transition-all ${
                       isMyMessage ? "hama-bubble--sent" : "hama-bubble--received"
-                    } ${
+                    } ${message.mediaType === "voice" ? "hama-bubble--voice" : ""} ${
                       selectedMessageId === message._id
                         ? "ring-2 ring-violet-400"
                         : ""
@@ -314,18 +442,27 @@ const ChatContainer = () => {
                       />
                     )}
 
-                    {(message.mediaType === "audio" || message.mediaType === "voice") &&
+                    {message.mediaType === "voice" &&
+                      (message.mediaUrl || message.mediaData) && (
+                        <VoiceMessagePlayer
+                          src={message.mediaUrl || message.mediaData}
+                          name={message.mediaName}
+                          duration={message.mediaDuration}
+                          avatar={isMyMessage ? authUser?.profilepic : selectedUser?.profilepic}
+                          senderName={isMyMessage ? authUser?.fullName : selectedUser?.fullName}
+                          isOutgoing={isMyMessage}
+                        />
+                      )}
+
+                    {message.mediaType === "audio" &&
                       (message.mediaUrl || message.mediaData) && (
                         <div className="hama-audio-message">
                           <audio
                             src={message.mediaUrl || message.mediaData}
                             controls
                             preload="metadata"
-                            aria-label={message.mediaType === "voice" ? "Voice message" : "Audio attachment"}
+                            aria-label="Audio attachment"
                           />
-                          {message.mediaType === "voice" && (
-                            <span>{message.mediaName || "Voice message"}</span>
-                          )}
                         </div>
                       )}
 
@@ -386,7 +523,8 @@ const ChatContainer = () => {
                       />
                     </div>
                   </div>
-                </div>
+                  </div>
+                </React.Fragment>
               );
             })}
           </div>
