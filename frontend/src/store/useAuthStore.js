@@ -159,31 +159,54 @@ export const useAuthStore = create((set, get) => ({
     },
 
     connectSocket: () => {
-        const { authUser } = get();
-        if (!authUser || get().socket?.connected) return;
+    const { authUser, socket } = get();
 
-        const socket = io(BASE_URL, {
-            withCredentials: true, //this ensure cookies are senet with the connection
-        });
+    if (!authUser) return;
 
-        socket.connect();
+    // Avoid creating duplicate connections
+    if (socket) {
+        if (!socket.connected) socket.connect();
+        return;
+    }
 
-        set({ socket });
+    const newSocket = io(BASE_URL, {
+        withCredentials: true,
+        autoConnect: false,
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+    });
 
-        //listening for connection errors 
+    newSocket.on("connect", () => {
+        console.log("Socket connected:", newSocket.id);
+    });
 
-        socket.on("getOnlineUsers", (userIds) => {
-            set({ onlineUsers: userIds });
-        });
+    newSocket.on("getOnlineUsers", (userIds) => {
+        console.log("Online users received:", userIds);
+        set({ onlineUsers: userIds });
+    });
 
-        socket.on("blockedByUser", ({ blockerId }) => {
-            // Jis user ne block kiya, wo hamesha offline dikhe
-            set((state) => ({
-                onlineUsers: state.onlineUsers.filter((id) => id !== blockerId),
-            }));
-        });
+    newSocket.on("connect_error", (error) => {
+        console.error("Socket connection error:", error.message);
+    });
 
-    },
+    newSocket.on("disconnect", (reason) => {
+        console.log("Socket disconnected:", reason);
+    });
+
+    newSocket.on("blockedByUser", ({ blockerId }) => {
+        set((state) => ({
+            onlineUsers: state.onlineUsers.filter(
+                (id) => id !== blockerId
+            ),
+        }));
+    });
+
+    set({ socket: newSocket });
+
+    newSocket.connect();
+},
 
     fetchBlockedUsers: async () => {
         try {

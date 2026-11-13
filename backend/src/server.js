@@ -14,12 +14,12 @@ dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
-const allowedOrigins = [
-  ENV.CLIENT_URL,          // from .env
-  'http://localhost:5173',   // your local frontend (Vite)
-  'http://localhost:3000',   // or CRA
-  'https://hama-chat-rw.vercel.app'  // your deployed frontend URL
-];
+app.use(cors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
 app.use(cors({
   origin: function (origin, callback) {

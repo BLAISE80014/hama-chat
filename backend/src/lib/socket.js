@@ -10,8 +10,10 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: ["https://hama-chats.vercel.app", "http://localhost:5173"],
+        origin: ["https://hama-chat-rw.vercel.app",
+                 "http://localhost:5173"],
         credentials: true,
+        methods: ["GET", "POST"],
     },
 });
 
@@ -24,7 +26,24 @@ export function getReceiverSocketId(userId) {
 }
 
 // Store online users
-const userSocketMap = {}; // {userId : socketId}
+// Store all active socket connections for each user
+const userSocketMap = new Map();
+
+// Get one active socket ID for existing message events
+export function getReceiverSocketId(userId) {
+    const sockets = userSocketMap.get(userId.toString());
+    return sockets?.values().next().value;
+}
+
+// Get all active socket IDs for a user
+export function getReceiverSocketIds(userId) {
+    return [...(userSocketMap.get(userId.toString()) || [])];
+}
+
+// Get all online user IDs
+export function getOnlineUserIds() {
+    return [...userSocketMap.keys()];
+}
 
 io.on("connection", (socket) => {
     console.log("A user connected", socket.user.fullName);
@@ -136,11 +155,25 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("disconnect", () => {
-        console.log("A User is Disconnected", socket.user.fullName);
-        delete userSocketMap[userId];
-        io.emit("getOnlineUsers", Object.keys(userSocketMap));
-    })
+    socket.on("disconnect", (reason) => {
+    console.log("A User is Disconnected:", socket.user.fullName, reason);
+
+    const userSockets = userSocketMap.get(userId);
+
+    if (userSockets) {
+        // Remove only this socket connection
+        userSockets.delete(socket.id);
+
+        // Mark user offline only when all connections are gone
+        if (userSockets.size === 0) {
+            userSocketMap.delete(userId);
+        }
+    }
+
+    console.log("Online users:", getOnlineUserIds());
+
+    io.emit("getOnlineUsers", getOnlineUserIds());
+});
 })
 
 export { io, app, server }
