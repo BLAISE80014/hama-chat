@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react'
-import { XCircleIcon, ArrowLeftIcon, Pencil, Trash2, X } from 'lucide-react'
+import { XCircleIcon, ArrowLeftIcon, Pencil, Trash2, X, Phone, Video } from 'lucide-react'
 import { useChatStore } from '../store/useChatStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { useCallStore } from '../store/useCallStore';
 import useWindowSize from '../hooks/useWindowSize';
 
 const ChatHeader = () => {
     const { selectedUser, setSelectedUser, setShowReceiverProfile, selectedMessage, setSelectedMessage, } = useChatStore();
     const { onlineUsers } = useAuthStore();
+    const startCall = useCallStore((state) => state.startCall);
     const isSelectedUserOnline = onlineUsers.some(
     (id) => String(id) === String(selectedUser?._id)
 );
@@ -121,18 +123,37 @@ const ChatHeader = () => {
                     </div>
                 </div>
 
-                {/* RightSide — back arrow on mobile, X on desktop/tablet */}
-                <button
-                    type="button"
-                    onClick={() => setSelectedUser(null)}
-                    aria-label="Close conversation"
-                    className='hama-header-close'
-                >
-                    {isMobile
-                        ? <ArrowLeftIcon size={26} aria-hidden="true" />
-                        : <XCircleIcon size={30} aria-hidden="true" />
-                    }
-                </button>
+                <div className="hama-header-actions">
+                    <button
+                        type="button"
+                        onClick={() => startCall(selectedUser, 'audio')}
+                        aria-label={`Start voice call with ${selectedUser?.fullName || 'contact'}`}
+                        title="Voice call"
+                        className="hama-call-header-button"
+                    >
+                        <Phone size={20} aria-hidden="true" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => startCall(selectedUser, 'video')}
+                        aria-label={`Start video call with ${selectedUser?.fullName || 'contact'}`}
+                        title="Video call"
+                        className="hama-call-header-button"
+                    >
+                        <Video size={21} aria-hidden="true" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setSelectedUser(null)}
+                        aria-label="Close conversation"
+                        className='hama-header-close'
+                    >
+                        {isMobile
+                            ? <ArrowLeftIcon size={26} aria-hidden="true" />
+                            : <XCircleIcon size={30} aria-hidden="true" />
+                        }
+                    </button>
+                </div>
             </header>
         )
     )

@@ -2051,3 +2051,365 @@ body {
     font-size: 26px;
   }
 }
+
+.hama-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hama-call-header-button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 0;
+  border-radius: 11px;
+  color: var(--hama-primary);
+  background: transparent;
+  cursor: pointer;
+  transition: background .16s ease, transform .16s ease;
+}
+
+.hama-call-header-button:hover {
+  transform: translateY(-1px);
+  background: #eee7fc;
+}
+
+.hama-call-overlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(25, 8, 55, .72);
+  backdrop-filter: blur(9px);
+}
+
+.hama-call-card {
+  display: flex;
+  width: min(430px, 100%);
+  min-height: 430px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 27px;
+  padding: 32px;
+  border: 1px solid rgba(220, 204, 255, .45);
+  border-radius: 28px;
+  color: #fff;
+  background:
+    radial-gradient(ellipse at 18% 0%, rgba(124, 58, 237, .42), transparent 42%),
+    linear-gradient(155deg, #321165, #1d0b3c 75%);
+  box-shadow: 0 28px 90px rgba(18, 5, 43, .48);
+}
+
+.hama-call-person {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.hama-call-person > div {
+  display: flex;
+  flex-direction: column;
+  align-items: inherit;
+}
+
+.hama-call-enable-audio {
+  padding: 8px 13px;
+  border: 1px solid rgba(220, 204, 255, .36);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255, 255, 255, .12);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.hama-call-person img {
+  width: 112px;
+  height: 112px;
+  margin-bottom: 20px;
+  border: 3px solid rgba(255, 255, 255, .88);
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 10px 28px rgba(9, 2, 26, .32);
+}
+
+.hama-call-person h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 720;
+  letter-spacing: -.025em;
+}
+
+.hama-call-person p {
+  margin: 8px 0 0;
+  color: #d7c5ff;
+  font-size: 14px;
+}
+
+.hama-call-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 17px;
+}
+
+.hama-call-control {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border: 1px solid rgba(233, 221, 255, .2);
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(255, 255, 255, .13);
+  cursor: pointer;
+  transition: transform .16s ease, background .16s ease;
+}
+
+.hama-call-control:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, .23);
+}
+
+.hama-call-control.is-off {
+  color: #452077;
+  background: #e9ddff;
+}
+
+.hama-call-control--accept {
+  background: #22a469;
+}
+
+.hama-call-control--accept:hover {
+  background: #168657;
+}
+
+.hama-call-control--end {
+  background: #e54872;
+}
+
+.hama-call-control--end:hover {
+  background: #c92f5a;
+}
+
+.hama-call-overlay--video .hama-call-card {
+  position: relative;
+  width: min(960px, 100%);
+  min-height: min(720px, calc(100dvh - 36px));
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 16px;
+  overflow: hidden;
+  padding: 18px;
+}
+
+.hama-call-stage {
+  position: relative;
+  display: grid;
+  min-height: 280px;
+  flex: 1;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(233, 221, 255, .12);
+  border-radius: 20px;
+  background: #120824;
+}
+
+.hama-call-remote-video {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  object-fit: cover;
+  background: #120824;
+}
+
+.hama-call-video-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 13px;
+  color: #e9ddff;
+  font-size: 14px;
+}
+
+.hama-call-video-placeholder img {
+  width: 112px;
+  height: 112px;
+  border: 3px solid rgba(255, 255, 255, .75);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.hama-call-local-preview {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: clamp(110px, 22%, 190px);
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, .82);
+  border-radius: 15px;
+  background: #26123e;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+}
+
+.hama-call-local-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.hama-call-local-preview span {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 5px 7px;
+  color: #fff;
+  background: rgba(25, 8, 55, .75);
+  font-size: 10px;
+  text-align: center;
+}
+
+.hama-call-overlay--video .hama-call-person {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px;
+  text-align: left;
+}
+
+.hama-call-overlay--video .hama-call-person img {
+  width: 43px;
+  height: 43px;
+  margin: 0;
+  border-width: 1px;
+}
+
+.hama-call-overlay--video .hama-call-person h2 {
+  font-size: 15px;
+}
+
+.hama-call-overlay--video .hama-call-person p {
+  margin-top: 3px;
+  font-size: 12px;
+}
+
+.hama-call-overlay--video .hama-call-person > div {
+  align-items: flex-start;
+}
+
+.hama-call-overlay--video .hama-call-controls {
+  padding: 1px 0 4px;
+}
+
+.hama-emoji-container {
+  position: relative;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+}
+
+.hama-emoji-button {
+  display: grid;
+  width: 39px;
+  height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 11px;
+  color: var(--hama-primary);
+  background: transparent;
+  cursor: pointer;
+}
+
+.hama-emoji-button:hover,
+.hama-emoji-button[aria-expanded="true"] {
+  background: #f1eaff;
+}
+
+.hama-emoji-popover {
+  position: absolute;
+  z-index: 25;
+  right: -49px;
+  bottom: calc(100% + 12px);
+  width: 320px;
+  max-width: calc(100vw - 20px);
+  border: 1px solid #e5dafa;
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(46, 16, 101, .24);
+}
+
+.hama-emoji-picker {
+  --epr-bg-color: #fff;
+  --epr-category-label-bg-color: #fff;
+  --epr-search-input-bg-color: #f8f5ff;
+  --epr-search-input-bg-color-active: #fff;
+  --epr-picker-border-color: #e5dafa;
+  --epr-text-color: #24134d;
+  --epr-highlight-color: #6d28d9;
+  --epr-hover-bg-color: #f1eaff;
+  --epr-focus-bg-color: #ede9fe;
+  --epr-emoji-size: 25px;
+  width: min(320px, calc(100vw - 22px)) !important;
+  max-width: calc(100vw - 22px);
+  border: 0 !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+}
+
+.hama-emoji-loading {
+  display: grid;
+  width: min(320px, calc(100vw - 22px));
+  height: 360px;
+  place-items: center;
+  color: var(--hama-muted);
+  font-size: 13px;
+}
+
+@media (max-width: 767px) {
+  .hama-header-actions {
+    gap: 1px;
+  }
+
+  .hama-call-header-button,
+  .hama-header-actions .hama-header-close {
+    width: 34px;
+    height: 36px;
+  }
+
+  .hama-call-overlay {
+    padding: 12px;
+  }
+
+  .hama-call-card {
+    min-height: 400px;
+    padding: 25px 20px;
+  }
+
+  .hama-call-overlay--video .hama-call-card {
+    min-height: calc(100dvh - 24px);
+    padding: 10px;
+  }
+
+  .hama-call-stage,
+  .hama-call-remote-video {
+    min-height: 220px;
+  }
+
+  .hama-call-local-preview {
+    right: 9px;
+    bottom: 9px;
+    width: clamp(90px, 28%, 140px);
+  }
+
+  .hama-emoji-popover {
+    right: -47px;
+  }
+}

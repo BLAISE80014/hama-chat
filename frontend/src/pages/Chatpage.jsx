@@ -11,6 +11,7 @@ import NoChatConversation from '../components/NoChatConversation'
 import useWindowSize from '../hooks/useWindowSize'
 import ReceiverProfileDrawer from '../components/ReceiverProfileDrawer'
 import SettingsModal from '../components/SettingsModal'
+import CallOverlay from '../components/CallOverlay'
 
 const Chatpage = () => {
   const { ActiveTab, selectedUser, setActiveTab } = useChatStore()
@@ -85,6 +86,7 @@ const Chatpage = () => {
             {listPanel}
           </div>
         )}
+        <CallOverlay />
         <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       </div>
     )
@@ -155,6 +157,7 @@ const Chatpage = () => {
           {selectedUser ? <ChatContainer /> : <NoChatConversation />}
         </main>
       </div>
+      <CallOverlay />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   )
