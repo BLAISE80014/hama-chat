@@ -15,8 +15,19 @@ const App = () => {
   useEffect(() => {
     if (!socket) return;
     subscribeToMessages();
-    return () => unsubscribeFromMessages();
-  }, [socket]);
+    const handleSocketConnect = () => {
+      const selectedUserId = useChatStore.getState().selectedUser?._id;
+      if (selectedUserId) {
+        useChatStore.getState().markAsSeen(selectedUserId);
+      }
+    };
+    socket.on("connect", handleSocketConnect);
+    socket.connect();
+    return () => {
+      socket.off("connect", handleSocketConnect);
+      unsubscribeFromMessages();
+    };
+  }, [socket, subscribeToMessages, unsubscribeFromMessages]);
 
   useEffect(() => {
     checkAuth()

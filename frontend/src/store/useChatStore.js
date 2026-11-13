@@ -3,6 +3,7 @@ import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { useAuthStore } from "./useAuthStore";
 
+let messagesRequestId = 0;
 
 export const useChatStore = create((set, get) => ({
     allcontacts: [],
@@ -47,6 +48,7 @@ export const useChatStore = create((set, get) => ({
     },
 
     getMessagesByUserId: async (userId) => {
+        const requestId = ++messagesRequestId;
         if (!userId) {
             set({ messages: [], isMessagesLoading: false });
             return;
@@ -54,12 +56,35 @@ export const useChatStore = create((set, get) => ({
         set({ isMessagesLoading: true, messages: [] })
         try {
             const res = await axiosInstance.get(`/messages/${userId}`);
-            set({ messages: res.data })
+            if (requestId === messagesRequestId) {
+                set((state) => {
+                    const conversationMessages = state.messages.filter((message) =>
+                        [message.Sender, message.Reciever].some(
+                            (participantId) => String(participantId) === String(userId)
+                        )
+                    );
+                    const messagesById = new Map(
+                        [...res.data, ...conversationMessages].map((message) => [
+                            String(message._id),
+                            message,
+                        ])
+                    );
+                    return {
+                        messages: [...messagesById.values()].sort(
+                            (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+                        ),
+                    };
+                });
+            }
         } catch (error) {
-            set({ messages: [] })
-            toast.error(error.response?.data?.message ?? "Failed to load messages")
+            if (requestId === messagesRequestId) {
+                set({ messages: [] });
+                toast.error(error.response?.data?.message ?? "Failed to load messages");
+            }
         } finally {
-            set({ isMessagesLoading: false })
+            if (requestId === messagesRequestId) {
+                set({ isMessagesLoading: false });
+            }
         }
     },
 
@@ -67,12 +92,15 @@ export const useChatStore = create((set, get) => ({
         const { selectedUser } = get();
         const { authUser } = useAuthStore.getState();
 
-        const tempId = `temp-${Date.now()}`;
+        if (!selectedUser?._id || !authUser?._id) return;
+
+        const receiverId = String(selectedUser._id);
+        const tempId = `temp-${Date.now()}-${Math.random()}`;
 
         const optimisticMessage = {
             _id: tempId,
-            senderId: authUser._id,   //
-            receiverId: selectedUser._id,
+            Sender: String(authUser._id),
+            Reciever: receiverId,
             text: messageData.text,
             image: messageData.image,
             createdAt: new Date().toISOString(),
@@ -82,13 +110,16 @@ export const useChatStore = create((set, get) => ({
         set((state) => ({ messages: [...state.messages, optimisticMessage] }));
 
         try {
-            const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
+            const res = await axiosInstance.post(`/messages/send/${receiverId}`, messageData);
             // Use functional update to get fresh state, replace optimistic msg
-            set((state) => ({
-                messages: state.messages
-                    .filter((m) => m._id !== tempId)
-                    .concat(res.data)
-            }));
+            if (String(get().selectedUser?._id) === receiverId) {
+                set((state) => ({
+                    messages: [
+                        ...state.messages.filter((m) => m._id !== tempId && m._id !== res.data._id),
+                        res.data,
+                    ],
+                }));
+            }
         } catch (error) {
             // Remove only the failed optimistic message, keep rest intact
             set((state) => ({
@@ -109,50 +140,37 @@ export const useChatStore = create((set, get) => ({
     // Jab user kisi ka chat open kare - ye call karo
     markAsSeen: (senderId) => {
         const socket = useAuthStore.getState().socket;
-        if (!socket || !senderId) return;
+        if (!socket?.connected || !senderId) return;
 
         // Socket se server ko batao - server DB update karega + sender ko notify karega
         socket.emit("markAsSeen", { senderId });
 
-        // Local state bhi update karo - jo messages aye hain unhe seen dikhao
-        set((state) => ({
-            messages: state.messages.map((msg) =>
-                msg.Sender === senderId && !msg.seen
-                    ? { ...msg, seen: true, seenAt: new Date().toISOString() }
-                    : msg
-            )
-        }));
     },
 
     deleteMessage: (messageId, reason) => {
         const socket = useAuthStore.getState().socket;
-        if (socket) {
-            socket.emit("deleteMessage", { messageId, reason });
+        if (!socket?.connected) {
+            toast.error("Connection lost. Please reconnect and try again.");
+            return;
         }
-        // Local state mein turant soft delete karo
-        set((state) => ({
-            messages: state.messages.map((msg) =>
-                msg._id === messageId
-                    ? { ...msg, isDeleted: true, text: null, image: null, deleteReason: reason || null }
-                    : msg
-            )
-        }));
+        socket.emit("deleteMessage", { messageId, reason }, (response) => {
+            if (!response?.success) {
+                toast.error(response?.message || "Could not delete message");
+            }
+        });
     },
 
-    editMessage: async (messageId, newText) => {
+    editMessage: (messageId, newText) => {
         const socket = useAuthStore.getState().socket;
-        // Socket se send karo (fast)
-        if (socket) {
-            socket.emit("editMessage", { messageId, text: newText });
+        if (!socket?.connected) {
+            toast.error("Connection lost. Please reconnect and try again.");
+            return;
         }
-        // Local state update karo turant
-        set((state) => ({
-            messages: state.messages.map((msg) =>
-                msg._id === messageId
-                    ? { ...msg, text: newText, isEdited: true, editedAt: new Date().toISOString() }
-                    : msg
-            )
-        }));
+        socket.emit("editMessage", { messageId, text: newText }, (response) => {
+            if (!response?.success) {
+                toast.error(response?.message || "Could not edit message");
+            }
+        });
     },
 
     subscribeToMessages: () => {
@@ -162,29 +180,53 @@ export const useChatStore = create((set, get) => ({
         socket.off("newMessage");
         socket.off("messagesSeen"); // ✅ Pehle clean karo
         socket.off("messageEdited");
-        socket.off("userBlocked");
+        socket.off("blockedByUser");
         socket.off("messageDeleted");
 
         socket.on("newMessage", (newMessage) => {
             const { selectedUser } = get();
-            const isMessageSentFromSelectedUser = newMessage.Sender === selectedUser?._id;
+            const { authUser } = useAuthStore.getState();
+            const isIncoming = String(newMessage.Reciever) === String(authUser?._id);
+            const peerId = isIncoming ? newMessage.Sender : newMessage.Reciever;
+            const hasChat = get().chats.some(
+                (chat) => String(chat._id) === String(peerId)
+            );
+            const isMessageInSelectedConversation =
+                String(peerId) === String(selectedUser?._id);
 
-            if (!isMessageSentFromSelectedUser) {
+            if (!isMessageInSelectedConversation) {
                 set((state) => ({
-                    unreadMessages: { ...state.unreadMessages, [newMessage.Sender]: true },
-                    chats: [
-                        { ...state.chats.find(c => c._id === newMessage.Sender) },
-                        ...state.chats.filter(c => c._id !== newMessage.Sender)
-                    ]
+                    unreadMessages: isIncoming
+                        ? { ...state.unreadMessages, [peerId]: true }
+                        : state.unreadMessages,
+                    chats: hasChat
+                        ? [
+                            state.chats.find((chat) => String(chat._id) === String(peerId)),
+                            ...state.chats.filter((chat) => String(chat._id) !== String(peerId)),
+                        ]
+                        : state.chats,
                 }));
+                if (isIncoming && !hasChat) {
+                    get().getMyChatPartners();
+                }
                 return;
             }
 
-            set((state) => ({ messages: [...state.messages, newMessage] }));
+            set((state) => ({
+                messages: state.messages.some((message) => String(message._id) === String(newMessage._id))
+                    ? state.messages
+                    : [...state.messages, newMessage],
+            }));
+            if (!hasChat) {
+                get().getMyChatPartners();
+            }
 
             // ✅ FEATURE 1: Jab message aaye aur chat open ho - turant seen mark karo
             const { selectedUser: currentSelectedUser } = get();
-            if (currentSelectedUser?._id === newMessage.Sender) {
+            if (
+                isIncoming &&
+                String(currentSelectedUser?._id) === String(newMessage.Sender)
+            ) {
                 get().markAsSeen(newMessage.Sender);
             }
         });
@@ -194,12 +236,12 @@ export const useChatStore = create((set, get) => ({
             const { selectedUser } = get();
 
             // Agar jo message dekha wo same selected user ne dekha
-            if (selectedUser?._id === by) {
+            if (String(selectedUser?._id) === String(by)) {
                 set((state) => ({
                     messages: state.messages.map((msg) => {
                         const { authUser } = useAuthStore.getState();
                         // Sirf apne bheje hue messages update karo
-                        if (msg.Sender === authUser._id && !msg.seen) {
+                        if (String(msg.Sender) === String(authUser?._id) && !msg.seen) {
                             return { ...msg, seen: true, seenAt };
                         }
                         return msg;
@@ -211,14 +253,14 @@ export const useChatStore = create((set, get) => ({
         socket.on("messageEdited", (updatedMessage) => {
             set((state) => ({
                 messages: state.messages.map((msg) =>
-                    msg._id === updatedMessage._id ? updatedMessage : msg
+                    String(msg._id) === String(updatedMessage._id) ? updatedMessage : msg
                 )
             }));
         });
         socket.on("messageDeleted", ({ messageId, reason }) => {
             set((state) => ({
                 messages: state.messages.map((msg) =>
-                    msg._id === messageId
+                    String(msg._id) === String(messageId)
                         ? { ...msg, isDeleted: true, text: null, image: null, deleteReason: reason }
                         : msg
                 )
@@ -227,14 +269,16 @@ export const useChatStore = create((set, get) => ({
             // ✅ Idea 1 — 5 seconds baad placeholder bhi hatao (receiver side)
             setTimeout(() => {
                 set((state) => ({
-                    messages: state.messages.filter((msg) => msg._id !== messageId)
+                    messages: state.messages.filter(
+                        (msg) => String(msg._id) !== String(messageId)
+                    )
                 }));
             }, 5000);
         });
-        socket.on("userBlocked", ({ blockedBy }) => {
+        socket.on("blockedByUser", ({ blockerId }) => {
             const { selectedUser } = get();
             // Agar jis user se chat chal rahi hai usne block kiya
-            if (selectedUser?._id === blockedBy) {
+            if (String(selectedUser?._id) === String(blockerId)) {
                 toast.error("You have been blocked by this user");
             }
         });
@@ -247,7 +291,7 @@ export const useChatStore = create((set, get) => ({
         socket.off("newMessage");
         socket.off("messagesSeen"); // ✅ Clean up
         socket.off("messageEdited");
-        socket.off("userBlocked");
+        socket.off("blockedByUser");
         socket.off("messageDeleted");
     },
 

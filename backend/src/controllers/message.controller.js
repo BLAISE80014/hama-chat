@@ -2,7 +2,7 @@ import Message from "../models/Message.js"
 import User from '../models/User.js'
 
 import cloudinary from "../lib/cloudinary.js";
-import { getReceiverSocketId, io } from "../lib/socket.js";
+import { getReceiverSocketIds, io } from "../lib/socket.js";
 
 export const getAllContact = async (req, res) => {
     try {
@@ -27,7 +27,7 @@ export const getMessagesByUserId = async (req, res) => {
                 { Sender: myId, Reciever: usertochat },
                 { Sender: usertochat, Reciever: myId }
             ]
-        })
+        }).sort({ createdAt: 1 })
 
         res.status(200).json(allmessages)
     } catch (error) {
@@ -44,7 +44,7 @@ export const sendMessage = async (req, res) => {
 
         // Block check - agar receiver ne sender ko block kiya hai
         const receiver = await User.findById(Reciever).select("blockedUsers");
-        if (receiver?.blockedUsers?.includes(Sender.toString())) {
+        if (receiver?.blockedUsers?.some((blockedUserId) => String(blockedUserId) === String(Sender))) {
             return res.status(403).json({ message: "You cannot send message to this user" });
         }
 
@@ -62,12 +62,12 @@ export const sendMessage = async (req, res) => {
         })
 
         await newMessage.save();
-        //  Todo - adding the socket io
-
-        const receiverSocketId = getReceiverSocketId(Reciever);
-        if (receiverSocketId) {
-            io.to(receiverSocketId).emit("newMessage", newMessage);
-        }
+        new Set([
+            ...getReceiverSocketIds(Reciever),
+            ...getReceiverSocketIds(Sender),
+        ]).forEach((socketId) => {
+            io.to(socketId).emit("newMessage", newMessage);
+        });
 
         res.status(201).json(newMessage)
     } catch (error) {
@@ -139,12 +139,13 @@ export const markMessagesAsSeen = async (req, res) => {
             }
         );
 
-        // ✅ Socket se sender ko batao ki message seen ho gaya
-        const senderSocketId = getReceiverSocketId(senderId);
-        if (senderSocketId) {
-            io.to(senderSocketId).emit("messagesSeen", {
-                by: myId,           // kisne dekha
-                seenAt: new Date(), // kab dekha
+        if (result.modifiedCount > 0) {
+            const seenAt = new Date();
+            getReceiverSocketIds(senderId).forEach((socketId) => {
+                io.to(socketId).emit("messagesSeen", {
+                    by: myId,
+                    seenAt,
+                });
             });
         }
 
@@ -171,6 +172,9 @@ export const editMessage = async (req, res) => {
         if (message.Sender.toString() !== userId.toString()) {
             return res.status(403).json({ message: "You can only edit your own messages" });
         }
+        if (message.isDeleted || typeof text !== "string" || !text.trim() || text.length > 2000) {
+            return res.status(400).json({ message: "Invalid message text" });
+        }
 
         // 10 min ka check
         const tenMinutes = 10 * 60 * 1000;
@@ -179,16 +183,15 @@ export const editMessage = async (req, res) => {
             return res.status(403).json({ message: "You can only edit messages within 10 minutes" });
         }
 
-        message.text = text;
+        message.text = text.trim();
         message.isEdited = true;
         message.editedAt = new Date();
         await message.save();
 
-        // Socket se dono users ko notify karo
-        const receiverSocketId = getReceiverSocketId(message.Reciever.toString());
-        if (receiverSocketId) {
-            io.to(receiverSocketId).emit("messageEdited", message);
-        }
+        new Set([
+            ...getReceiverSocketIds(message.Sender),
+            ...getReceiverSocketIds(message.Reciever),
+        ]).forEach((socketId) => io.to(socketId).emit("messageEdited", message));
 
         res.status(200).json(message);
     } catch (error) {
@@ -210,6 +213,13 @@ export const deleteMessage = async (req, res) => {
         if (message.Sender.toString() !== userId.toString()) {
             return res.status(403).json({ message: "You can only delete your own messages" });
         }
+        const validReasons = ["Sent by mistake", "Wrong person", "Private"];
+        if (reason && !validReasons.includes(reason)) {
+            return res.status(400).json({ message: "Invalid delete reason" });
+        }
+        if (message.isDeleted) {
+            return res.status(200).json({ message: "Message already deleted", data: message });
+        }
 
         message.isDeleted = true;
         message.deletedAt = new Date();
@@ -218,14 +228,14 @@ export const deleteMessage = async (req, res) => {
         message.image = null;
         await message.save();
 
-        // Dono users ko real-time notify karo
-        const receiverSocketId = getReceiverSocketId(message.Reciever.toString());
-        if (receiverSocketId) {
-            io.to(receiverSocketId).emit("messageDeleted", {
-                messageId: message._id,
-                reason: message.deleteReason,
-            });
-        }
+        const payload = {
+            messageId: message._id,
+            reason: message.deleteReason,
+        };
+        new Set([
+            ...getReceiverSocketIds(message.Sender),
+            ...getReceiverSocketIds(message.Reciever),
+        ]).forEach((socketId) => io.to(socketId).emit("messageDeleted", payload));
 
         res.status(200).json({ message: "Message deleted", data: message });
     } catch (error) {

@@ -7,6 +7,8 @@ import useWindowSize from '../hooks/useWindowSize';
 const ContactList = () => {
   const { allcontacts, setSelectedUser, getAllContacts, isUsersLoading } = useChatStore();
   const { onlineUsers } = useAuthStore();
+  const isOnline = (userId) =>
+    onlineUsers.some((id) => String(id) === String(userId));
   const { isTablet } = useWindowSize();
 
   useEffect(() => {
@@ -20,8 +22,8 @@ const ContactList = () => {
     return (
       <div className='w-full h-full flex flex-col items-center gap-2 overflow-y-auto py-1'>
         {[...allcontacts].reverse().sort((a, b) => {
-          const aOnline = onlineUsers.includes(a._id) ? 1 : 0;
-          const bOnline = onlineUsers.includes(b._id) ? 1 : 0;
+          const aOnline = isOnline(a._id) ? 1 : 0;
+          const bOnline = isOnline(b._id) ? 1 : 0;
           return bOnline - aOnline;
         }).map((contact) => (
           <button
@@ -30,7 +32,7 @@ const ContactList = () => {
             title={contact.fullName}
             className='relative flex-shrink-0'
           >
-            <div className={`avatar ${onlineUsers.includes(contact._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
+            <div className={`avatar ${isOnline(contact._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
               <img
                 src={contact.profilepic || "/avatar.jpg"}
                 alt={contact.fullName}
@@ -47,8 +49,8 @@ const ContactList = () => {
   return (
     <div className='h-full w-full flex gap-3 text-white/70 flex-col'>
       {[...allcontacts].reverse().sort((a, b) => {
-        const aOnline = onlineUsers.includes(a._id) ? 1 : 0;
-        const bOnline = onlineUsers.includes(b._id) ? 1 : 0;
+        const aOnline = isOnline(a._id) ? 1 : 0;
+        const bOnline = isOnline(b._id) ? 1 : 0;
         return bOnline - aOnline;
       }).map((contact) => (
         <div
@@ -57,7 +59,7 @@ const ContactList = () => {
           onClick={() => setSelectedUser(contact)}
         >
           {contact.profilepic ? (
-            <div className={`avatar ${onlineUsers.includes(contact._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
+            <div className={`avatar ${isOnline(contact._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
               <img
                 src={contact.profilepic}
                 alt={contact.fullName}
@@ -65,7 +67,7 @@ const ContactList = () => {
               />
             </div>
           ) : (
-            <div className={`avatar ${onlineUsers.includes(contact._id) ? 'online' : ''} w-10 h-10 rounded-full bg-gray-300`}>
+            <div className={`avatar ${isOnline(contact._id) ? 'online' : ''} w-10 h-10 rounded-full bg-gray-300`}>
               <img src="/avatar.jpg" alt="" className='object-cover w-full h-full rounded-full' />
             </div>
           )}
@@ -75,7 +77,7 @@ const ContactList = () => {
                 ? contact.fullName.slice(0, 6) + "..."
                 : contact.fullName}
             </span>
-            <span className={`text-sm ${onlineUsers.includes(contact._id) ? 'text-green-500' : 'text-gray-300/30'}`}>{onlineUsers.includes(contact._id) ? 'Online' : 'Offline'}</span>
+            <span className={`text-sm ${isOnline(contact._id) ? 'text-green-500' : 'text-gray-300/30'}`}>{isOnline(contact._id) ? 'Online' : 'Offline'}</span>
           </div>
         </div>
       ))}

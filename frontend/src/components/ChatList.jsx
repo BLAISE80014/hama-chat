@@ -7,15 +7,14 @@ import useWindowSize from '../hooks/useWindowSize';
 
 const ChatList = () => {
 
-  const {selectedUser, getMyChatPartners,subscribeToMessages,unsubscribeFromMessages, chats, setSelectedUser, isUsersLoading, unreadMessages, clearUnread } = useChatStore();
+  const { getMyChatPartners, chats, setSelectedUser, isUsersLoading, unreadMessages, clearUnread } = useChatStore();
   const { onlineUsers } = useAuthStore();
+  const isOnline = (userId) =>
+    onlineUsers.some((id) => String(id) === String(userId));
   const { isTablet } = useWindowSize();
 
   useEffect(() => {
     getMyChatPartners();
-    subscribeToMessages();
-
-    return () => unsubscribeFromMessages();
   }, [getMyChatPartners])
 
   if (isUsersLoading) return <UserLoadingSkeleton />
@@ -27,8 +26,8 @@ const ChatList = () => {
     return (
       <div className='w-full h-full flex flex-col items-center gap-2 overflow-y-auto py-1'>
         {[...chats].sort((a, b) => {
-          const aVal = unreadMessages[a._id] ? 2 : onlineUsers.includes(a._id) ? 1 : 0;
-          const bVal = unreadMessages[b._id] ? 2 : onlineUsers.includes(b._id) ? 1 : 0;
+          const aVal = unreadMessages[a._id] ? 2 : isOnline(a._id) ? 1 : 0;
+          const bVal = unreadMessages[b._id] ? 2 : isOnline(b._id) ? 1 : 0;
           return bVal - aVal;
         }).map((chat) => (
           <button
@@ -37,7 +36,7 @@ const ChatList = () => {
             title={chat.fullName}
             className='relative flex-shrink-0'
           >
-            <div className={`avatar ${onlineUsers.includes(chat._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
+            <div className={`avatar ${isOnline(chat._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
               <img
                 src={chat.profilepic || "/avatar.jpg"}
                 alt={chat.fullName}
@@ -54,8 +53,8 @@ const ChatList = () => {
   return (
     <div className='w-full h-full p-1 flex flex-col gap-2 overflow-y-auto'>
       {[...chats].sort((a, b) => {
-        const aVal = unreadMessages[a._id] ? 2 : onlineUsers.includes(a._id) ? 1 : 0;
-        const bVal = unreadMessages[b._id] ? 2 : onlineUsers.includes(b._id) ? 1 : 0;
+        const aVal = unreadMessages[a._id] ? 2 : isOnline(a._id) ? 1 : 0;
+        const bVal = unreadMessages[b._id] ? 2 : isOnline(b._id) ? 1 : 0;
         return bVal - aVal;
       }).map((chat) => (
         <div
@@ -67,7 +66,7 @@ const ChatList = () => {
               : 'bg-blue-900/20 hover:bg-blue-900/30'}`}
         >
           {chat.profilepic ? (
-            <div className={`avatar ${onlineUsers.includes(chat._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
+            <div className={`avatar ${isOnline(chat._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
               <img
                 src={chat.profilepic}
                 alt={chat.fullName}
@@ -75,7 +74,7 @@ const ChatList = () => {
               />
             </div>
           ) : (
-            <div className={`avatar ${onlineUsers.includes(chat._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
+            <div className={`avatar ${isOnline(chat._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
               <img src="/avatar.jpg" alt="" className='object-cover w-full h-full rounded-full' />
             </div>
           )}
@@ -88,8 +87,8 @@ const ChatList = () => {
                 <span className='w-2.5 h-2.5 rounded-full bg-blue-400'></span>
               )}
             </div>
-            <span className={`text-sm ${onlineUsers.includes(chat._id) ? 'text-green-500' : 'text-gray-300/30'}`}>
-              {onlineUsers.includes(chat._id) ? 'Online' : 'Offline'}
+            <span className={`text-sm ${isOnline(chat._id) ? 'text-green-500' : 'text-gray-300/30'}`}>
+              {isOnline(chat._id) ? 'Online' : 'Offline'}
             </span>
           </div>
         </div>

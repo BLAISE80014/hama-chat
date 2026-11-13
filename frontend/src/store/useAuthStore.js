@@ -4,7 +4,10 @@ import { toast } from "react-hot-toast"
 import { io } from "socket.io-client";
 
 // const BASE_URL = import.meta.env.MODE === 'development' ? 'http://localhost:5000' : '/'
-const BASE_URL = 'https://hama-chat.onrender.com'
+const BASE_URL = new URL(
+    import.meta.env.VITE_API_BASE_URL || 'https://hama-chat.onrender.com/api',
+    window.location.origin
+).origin;
 
 // const BASE_URL = 'http://localhost:5000'
 
@@ -68,7 +71,7 @@ export const useAuthStore = create((set, get) => ({
 
     logout: async () => {
         try {
-            const res = await axiosInstance.post('/auth/logout');
+            await axiosInstance.post('/auth/logout');
             set({ authUser: null })
             toast.success("Logged Out Successfully")
             get().disconnectSocket();
@@ -145,7 +148,7 @@ export const useAuthStore = create((set, get) => ({
     changePassword: async (passwordData) => {
         set({ isUpdatingProfile: true }); // ADD THIS
         try {
-            const res = await axiosInstance.put("/auth/change-password", passwordData);
+            await axiosInstance.put("/auth/change-password", passwordData);
             toast.success("Password changed successfully!");
             return true;
         } catch (error) {
@@ -161,12 +164,23 @@ export const useAuthStore = create((set, get) => ({
     connectSocket: () => {
     const { authUser, socket } = get();
 
-    if (!authUser) return;
-
-    // Avoid creating duplicate connections
-    if (socket) {
-        if (!socket.connected) socket.connect();
+    if (!authUser?._id) {
+        console.log("Socket: No authenticated user");
         return;
+    }
+
+    // Reuse existing socket connection
+    if (socket) {
+        if (socket.authUserId !== String(authUser._id)) {
+            socket.disconnect();
+            socket.removeAllListeners();
+            set({ socket: null, onlineUsers: [] });
+        } else if (!socket.connected) {
+            socket.connect();
+            return;
+        } else {
+            return;
+        }
     }
 
     const newSocket = io(BASE_URL, {
@@ -177,6 +191,7 @@ export const useAuthStore = create((set, get) => ({
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
     });
+    newSocket.authUserId = String(authUser._id);
 
     newSocket.on("connect", () => {
         console.log("Socket connected:", newSocket.id);
@@ -184,7 +199,10 @@ export const useAuthStore = create((set, get) => ({
 
     newSocket.on("getOnlineUsers", (userIds) => {
         console.log("Online users received:", userIds);
-        set({ onlineUsers: userIds });
+
+        set({
+            onlineUsers: userIds.map(String)
+        });
     });
 
     newSocket.on("connect_error", (error) => {
@@ -193,19 +211,18 @@ export const useAuthStore = create((set, get) => ({
 
     newSocket.on("disconnect", (reason) => {
         console.log("Socket disconnected:", reason);
+        set({ onlineUsers: [] });
     });
 
     newSocket.on("blockedByUser", ({ blockerId }) => {
         set((state) => ({
             onlineUsers: state.onlineUsers.filter(
-                (id) => id !== blockerId
+                (id) => String(id) !== String(blockerId)
             ),
         }));
     });
 
     set({ socket: newSocket });
-
-    newSocket.connect();
 },
 
     fetchBlockedUsers: async () => {
@@ -239,9 +256,19 @@ export const useAuthStore = create((set, get) => ({
         }
     },
 
-    disconnectSocket: () => {
-        if (get().socket?.connected) get().socket.disconnect();
-    },
+   disconnectSocket: () => {
+    const socket = get().socket;
+
+    if (socket) {
+        socket.disconnect();
+        socket.removeAllListeners();
+
+        set({
+            socket: null,
+            onlineUsers: [],
+        });
+    }
+},
 
 
 }))

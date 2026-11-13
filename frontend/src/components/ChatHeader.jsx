@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { XCircleIcon, ArrowLeftIcon, Pencil, Trash2, X } from 'lucide-react'
 import { useChatStore } from '../store/useChatStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -6,8 +6,12 @@ import useWindowSize from '../hooks/useWindowSize';
 
 const ChatHeader = () => {
     const { selectedUser, setSelectedUser, setShowReceiverProfile, selectedMessage, setSelectedMessage, } = useChatStore();
-    const { onlineUsers, authUser } = useAuthStore();
+    const { onlineUsers } = useAuthStore();
+    const isSelectedUserOnline = onlineUsers.some(
+    (id) => String(id) === String(selectedUser?._id)
+);
     const { isMobile } = useWindowSize();
+    const [editableMessageId, setEditableMessageId] = useState(null);
 
     useEffect(() => {
         const handleEscapekey = (event) => {
@@ -17,13 +21,32 @@ const ChatHeader = () => {
         return () => {
             window.removeEventListener('keydown', handleEscapekey);
         };
-    }, [selectedUser])
+    }, [selectedUser, setSelectedUser])
 
     // Action bar logic
     const tenMin = 10 * 60 * 1000;
+    useEffect(() => {
+        let expiryTimer;
+        const evaluateEditWindow = () => {
+            const remaining = selectedMessage?.createdAt
+                ? tenMin - (Date.now() - new Date(selectedMessage.createdAt).getTime())
+                : 0;
+            setEditableMessageId(remaining > 0 ? selectedMessage._id : null);
+            if (remaining > 0) {
+                expiryTimer = setTimeout(() => setEditableMessageId(null), remaining);
+            }
+        };
+        const evaluationTimer = setTimeout(evaluateEditWindow, 0);
+
+        return () => {
+            clearTimeout(evaluationTimer);
+            clearTimeout(expiryTimer);
+        };
+    }, [selectedMessage?._id, selectedMessage?.createdAt, tenMin]);
+
     const canEdit = selectedMessage &&
         !selectedMessage.isDeleted &&
-        Date.now() - new Date(selectedMessage.createdAt).getTime() < tenMin;
+        String(editableMessageId) === String(selectedMessage._id);
 
     return (
 
@@ -81,7 +104,7 @@ const ChatHeader = () => {
                 <div className='left flex items-center gap-4 cursor-pointer'
                     onClick={() => setShowReceiverProfile(true)} >
 
-                    <div className={`avatar ${onlineUsers.includes(selectedUser?._id) ? 'online' : ''} w-10 h-10 rounded-full`}>
+                    <div className={`avatar ${isSelectedUserOnline ? 'online' : ''} w-10 h-10 rounded-full`}>
                         <img
                             src={selectedUser?.profilepic || "/avatar.jpg"}
                             alt={selectedUser?.fullName}
@@ -90,8 +113,8 @@ const ChatHeader = () => {
 
                     <div className='flex flex-col'>
                         <span className='font-semibold'>{selectedUser?.fullName}</span>
-                        <span className={`text-sm ${onlineUsers.includes(selectedUser?._id) ? 'text-green-500' : 'text-gray-300/30'}`}>
-                            {onlineUsers.includes(selectedUser?._id) ? 'Online' : 'Offline'}
+                        <span className={`text-sm ${isSelectedUserOnline ? 'text-green-500' : 'text-gray-300/30'}`}>
+                            {isSelectedUserOnline ? 'Online' : 'Offline'}
                         </span>
                     </div>
                 </div>

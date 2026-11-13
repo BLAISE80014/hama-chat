@@ -1,5 +1,5 @@
 import { Image, Send, Shield, XIcon } from 'lucide-react'
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect, useCallback } from 'react'
 import { useChatStore } from '../store/useChatStore';
 import toast from 'react-hot-toast';
 import useWindowSize from '../hooks/useWindowSize';
@@ -8,24 +8,82 @@ import { useAuthStore } from '../store/useAuthStore';
 const MessageInput = () => {
 
     const { sendMessage } = useChatStore();
-    const { blockedUsers } = useAuthStore();
+    const { blockedUsers, socket } = useAuthStore();
     const { selectedUser } = useChatStore();
     const isBlocked = blockedUsers.includes(selectedUser?._id);
     const { isMobile } = useWindowSize();
 
     const [text, setText] = useState("");
     const [imagePreview, setImagePreview] = useState(null);
+    const typingTimeoutRef = useRef(null);
+    const isTypingRef = useRef(false);
+
+const stopTyping = useCallback(() => {
+    if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+    }
+
+    if (isTypingRef.current && socket?.connected && selectedUser?._id) {
+        socket.emit("stopTyping", {
+            receiverId: String(selectedUser._id),
+        });
+    }
+
+    isTypingRef.current = false;
+}, [socket, selectedUser]);
+
+const handleTextChange = (e) => {
+    const value = e.target.value;
+    setText(value);
+
+    if (value.trim() && socket?.connected && selectedUser?._id) {
+        if (!isTypingRef.current) {
+            socket.emit("typing", {
+                receiverId: String(selectedUser._id),
+            });
+            isTypingRef.current = true;
+        }
+
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
+        typingTimeoutRef.current = setTimeout(() => {
+            stopTyping();
+        }, 1500);
+    } else if (!value.trim()) {
+        stopTyping();
+    }
+};
+
+useEffect(() => {
+    return () => {
+        stopTyping();
+    };
+}, [stopTyping]);
 
     const FileInputRef = useRef(null);
 
-    const handleSendMessage = (e) => {
-        e.preventDefault();
-        if (!text.trim() && !imagePreview) return;
-        sendMessage({ text: text.trim(), image: imagePreview })
-        setText("");
-        setImagePreview(null);
-        if (FileInputRef.current) FileInputRef.current.value = ""
+const handleSendMessage = (e) => {
+    e.preventDefault();
+
+    if (!text.trim() && !imagePreview) return;
+
+    stopTyping();
+
+    sendMessage({
+        text: text.trim(),
+        image: imagePreview
+    });
+
+    setText("");
+    setImagePreview(null);
+
+    if (FileInputRef.current) {
+        FileInputRef.current.value = "";
     }
+}
 
     const handleImageChange = (e) => {
         const file = e.target.files[0]
@@ -81,12 +139,13 @@ const MessageInput = () => {
                 onSubmit={handleSendMessage}
             >
                 <input
-                    type="text"
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder="Type your message..."
-                    className={`flex-1 border border-gray-300/20 bg-gray-100/20 outline-none rounded-lg ${isMobile ? 'p-1.5 text-sm' : 'p-2'}`}
-                />
+    type="text"
+    value={text}
+    onChange={handleTextChange}
+    onBlur={stopTyping}
+    placeholder="Type your message..."
+    className={`flex-1 border border-gray-300/20 bg-gray-100/20 outline-none rounded-lg ${isMobile ? 'p-1.5 text-sm' : 'p-2'}`}
+/>
 
                 <input
                     type="file"
