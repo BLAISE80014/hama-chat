@@ -1,4 +1,4 @@
-import { Image, Send, Shield, XIcon } from 'lucide-react'
+import { Paperclip, Send, Shield, XIcon } from 'lucide-react'
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import { useChatStore } from '../store/useChatStore';
 import toast from 'react-hot-toast';
@@ -103,7 +103,7 @@ const handleSendMessage = (e) => {
 
     if (isBlocked) {
         return (
-            <div className="w-full p-4 border-t border-gray-300/20 flex items-center justify-center">
+            <div className="hama-composer w-full flex items-center justify-center">
                 <p className="text-red-400 text-sm flex items-center gap-2">
                     <Shield size={16} />
                     You have blocked this user. Unblock to send messages.
@@ -113,19 +113,19 @@ const handleSendMessage = (e) => {
     }
     
     return (
-        <div className={`w-full border-t border-gray-300/20 flex flex-col gap-2 ${isMobile ? 'p-2' : 'p-4'}`}>
+        <div className={`hama-composer w-full flex flex-col gap-2 ${isMobile ? 'p-2' : 'p-4'}`}>
 
             {/* Image Preview */}
             {imagePreview && (
-                <div className="relative w-fit">
+                <div className="hama-image-preview relative w-fit">
                     <img
                         src={imagePreview}
                         alt="Preview"
-                        className={`object-cover rounded-lg border border-slate-700 ${isMobile ? 'w-14 h-14' : 'w-20 h-20'}`}
+                        className={`object-cover rounded-xl border border-violet-200 ${isMobile ? 'w-14 h-14' : 'w-20 h-20'}`}
                     />
                     <button
                         onClick={RemoveImagePreview}
-                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 hover:bg-slate-700"
+                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-violet-700 flex items-center justify-center text-white hover:bg-violet-600"
                         type="button"
                     >
                         <XIcon className="w-4 h-4" />
@@ -135,17 +135,18 @@ const handleSendMessage = (e) => {
 
             {/* Input Row */}
             <form
-                className='w-full flex items-center gap-2'
+                className='hama-message-form w-full'
                 onSubmit={handleSendMessage}
             >
                 <input
-    type="text"
-    value={text}
-    onChange={handleTextChange}
-    onBlur={stopTyping}
-    placeholder="Type your message..."
-    className={`flex-1 border border-gray-300/20 bg-gray-100/20 outline-none rounded-lg ${isMobile ? 'p-1.5 text-sm' : 'p-2'}`}
-/>
+                    type="text"
+                    value={text}
+                    onChange={handleTextChange}
+                    onBlur={stopTyping}
+                    placeholder="Type a message..."
+                    aria-label="Type a message"
+                    className={`hama-message-field ${isMobile ? 'text-sm' : ''}`}
+                />
 
                 <input
                     type="file"
@@ -156,17 +157,19 @@ const handleSendMessage = (e) => {
                 />
 
                 <button
-                    type='submit'
-                    disabled={!text.trim() && !imagePreview}
-                    className={`bg-blue-500/20 text-white rounded-lg ${isMobile ? 'p-2' : 'p-3'}`}>
-                    <Send size={isMobile ? 18 : 24} />
+                    type='button'
+                    onClick={() => FileInputRef.current?.click()}
+                    className='hama-attach-button'
+                    aria-label="Attach an image">
+                    <Paperclip size={isMobile ? 19 : 23} />
                 </button>
 
                 <button
-                    type='button'
-                    onClick={() => FileInputRef.current.click()}
-                    className={`bg-blue-500/20 text-white rounded-lg ${isMobile ? 'p-2' : 'p-3'}`}>
-                    <Image size={isMobile ? 18 : 24} />
+                    type='submit'
+                    disabled={!text.trim() && !imagePreview}
+                    className='hama-send-button'
+                    aria-label="Send message">
+                    <Send size={isMobile ? 18 : 24} />
                 </button>
             </form>
 

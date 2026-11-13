@@ -51,13 +51,13 @@ const ChatHeader = () => {
     return (
 
         selectedMessage ? (
-            <div className='w-full h-16 border-b border-gray-300/20 flex items-center justify-between px-4 bg-cyan-900/30' >
+            <div className='hama-chat-header hama-selected-toolbar'>
                 {/* Left - selected info */}
                 < div className='flex items-center gap-3' >
-                    <button onClick={() => setSelectedMessage(null)}>
-                        <X size={22} className='text-gray-300 hover:text-white' />
+                    <button className="hama-header-close" onClick={() => setSelectedMessage(null)} aria-label="Clear selected message">
+                        <X size={20} />
                     </button>
-                    <span className='text-sm text-gray-300'>Message selected</span>
+                    <span className='text-sm'>Message selected</span>
                 </div >
 
                 {/* Right - action buttons */}
@@ -74,7 +74,7 @@ const ChatHeader = () => {
                                     }));
                                     setSelectedMessage(null);
                                 }}
-                                className='flex items-center gap-1 text-sm text-cyan-400 hover:text-cyan-300 bg-cyan-900/40 px-3 py-1.5 rounded-lg'
+                                className='hama-message-action hama-message-action--edit'
                             >
                                 <Pencil size={15} /> Edit
                             </button>
@@ -89,7 +89,7 @@ const ChatHeader = () => {
                             }));
                             setSelectedMessage(null);
                         }}
-                        className='flex items-center gap-1 text-sm text-red-400 hover:text-red-300 bg-red-900/30 px-3 py-1.5 rounded-lg'
+                        className='hama-message-action hama-message-action--delete'
                     >
                         <Trash2 size={15} /> Delete
                     </button>
@@ -98,22 +98,24 @@ const ChatHeader = () => {
         ) : (
 
 
-            <div className='w-full h-16 border-b border-gray-300/20 flex items-center justify-between px-4'>
+            <header className='hama-chat-header'>
                 {/* LeftSide */}
 
-                <div className='left flex items-center gap-4 cursor-pointer'
+                <div className='hama-chat-person'
                     onClick={() => setShowReceiverProfile(true)} >
 
-                    <div className={`avatar ${isSelectedUserOnline ? 'online' : ''} w-10 h-10 rounded-full`}>
+                    <div className='hama-chat-person-avatar'>
                         <img
                             src={selectedUser?.profilepic || "/avatar.jpg"}
                             alt={selectedUser?.fullName}
-                            className=' w-10 h-10 rounded-full' />
+                        />
+                        {isSelectedUserOnline && <i className="hama-online-dot" />}
                     </div>
 
-                    <div className='flex flex-col'>
-                        <span className='font-semibold'>{selectedUser?.fullName}</span>
-                        <span className={`text-sm ${isSelectedUserOnline ? 'text-green-500' : 'text-gray-300/30'}`}>
+                    <div className='hama-chat-person-copy'>
+                        <strong>{selectedUser?.fullName}</strong>
+                        <span>
+                            <i className={isSelectedUserOnline ? '' : 'is-offline'} />
                             {isSelectedUserOnline ? 'Online' : 'Offline'}
                         </span>
                     </div>
@@ -122,16 +124,16 @@ const ChatHeader = () => {
                 {/* RightSide — back arrow on mobile, X on desktop/tablet */}
                 <button
                     type="button"
-                    onClick={() => { setSelectedUser(null) }}
+                    onClick={() => setSelectedUser(null)}
                     aria-label="Close conversation"
-                    className='right cursor-pointer ml-10'
+                    className='hama-header-close'
                 >
                     {isMobile
                         ? <ArrowLeftIcon size={26} aria-hidden="true" />
                         : <XCircleIcon size={30} aria-hidden="true" />
                     }
                 </button>
-            </div>
+            </header>
         )
     )
 }

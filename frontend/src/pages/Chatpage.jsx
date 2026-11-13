@@ -1,100 +1,163 @@
-import React from 'react'
-import AestheticBackground from '../theme/AestheticBackground'
+import React, { useState } from 'react'
+import { LogOut, MessageCircleMore, Search, Settings, SquarePen } from 'lucide-react'
 import { useChatStore } from '../store/useChatStore'
-import ProfileHeader from '../components/ProfileHeader';
-import ActiveTabSwitch from '../components/ActiveTabSwitch';
-import ChatList from '../components/ChatList';
-import ContactList from '../components/ContactList';
-import ChatContainer from '../components/ChatContainer';
-import NoChatConversation from '../components/NoChatConversation';
-import useWindowSize from '../hooks/useWindowSize';
-import ReceiverProfileDrawer from '../components/ReceiverProfileDrawer';
+import { useAuthStore } from '../store/useAuthStore'
+import ProfileHeader from '../components/ProfileHeader'
+import ActiveTabSwitch from '../components/ActiveTabSwitch'
+import ChatList from '../components/ChatList'
+import ContactList from '../components/ContactList'
+import ChatContainer from '../components/ChatContainer'
+import NoChatConversation from '../components/NoChatConversation'
+import useWindowSize from '../hooks/useWindowSize'
+import ReceiverProfileDrawer from '../components/ReceiverProfileDrawer'
+import SettingsModal from '../components/SettingsModal'
 
 const Chatpage = () => {
+  const { ActiveTab, selectedUser, setActiveTab } = useChatStore()
+  const { logout } = useAuthStore()
+  const { isMobile, isTablet } = useWindowSize()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
-  const { ActiveTab, selectedUser } = useChatStore();
-  const { isMobile, isTablet } = useWindowSize();
+  const conversationList = ActiveTab === 'chats'
+    ? <ChatList searchQuery={searchQuery} />
+    : <ContactList searchQuery={searchQuery} />
 
-  // ─── MOBILE (<768px) ──────────────────────────────────────────────────────
-  // Show sidebar OR chat fullscreen — never both
+  const listPanel = (
+    <section className="hama-conversations">
+      <header className="hama-list-heading">
+        <h1>{ActiveTab === 'chats' ? 'Chats' : 'Contacts'}</h1>
+        <button
+          type="button"
+          className="hama-new-chat"
+          onClick={() => setActiveTab('contacts')}
+          aria-label="Start a new chat"
+          title="New chat"
+        >
+          <SquarePen size={19} />
+        </button>
+      </header>
+      <label className="hama-search">
+        <Search size={18} aria-hidden="true" />
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder={ActiveTab === 'chats' ? 'Search conversations...' : 'Search contacts...'}
+          aria-label="Search conversations and contacts"
+        />
+      </label>
+      <div className="hama-conversation-list custom-scroll">
+        {conversationList}
+      </div>
+    </section>
+  )
+
   if (isMobile) {
     return (
-      <div className='h-screen w-screen flex items-center justify-center font-sans overflow-hidden'>
-        <AestheticBackground />
-        <div className='h-screen w-screen bg-white/[0.01] backdrop-blur-3xl flex overflow-hidden z-10'>
-          <ReceiverProfileDrawer />
-          {selectedUser ? (
-            <div className='w-full h-full'>
-              <ChatContainer />
-            </div>
-          ) : (
-            <div className='w-full h-full flex flex-col p-3 gap-3'>
-              <ProfileHeader />
-              <ActiveTabSwitch />
-              <div className='flex-1 overflow-y-auto'>
-                {ActiveTab === 'chats' ? <ChatList /> : <ContactList />}
+      <div className="hama-page hama-mobile-page">
+        <ReceiverProfileDrawer />
+        {selectedUser ? (
+          <div className="hama-mobile-chat">
+            <ChatContainer />
+          </div>
+        ) : (
+          <div className="hama-mobile-shell">
+            <header className="hama-mobile-top">
+              <div className="hama-brand">
+                <span className="hama-brand-mark"><MessageCircleMore size={23} /></span>
+                <span className="hama-brand-copy">
+                  <strong>Hama Chat</strong>
+                  <small>Connect · Chat · Share</small>
+                </span>
               </div>
+              <div className="hama-mobile-account-actions">
+                <button type="button" onClick={() => setIsSettingsOpen(true)} aria-label="Settings">
+                  <Settings size={19} />
+                </button>
+                <button type="button" onClick={logout} aria-label="Log out">
+                  <LogOut size={19} />
+                </button>
+              </div>
+            </header>
+            <ProfileHeader onOpenSettings={() => setIsSettingsOpen(true)} />
+            <ActiveTabSwitch />
+            {listPanel}
+          </div>
+        )}
+        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      </div>
+    )
+  }
+
+  return (
+    <div className={`hama-page ${isTablet ? 'hama-page--tablet' : ''}`}>
+      <div className={`hama-app-shell ${isTablet ? 'hama-app-shell--tablet' : ''}`}>
+        <ReceiverProfileDrawer />
+        <aside className="hama-sidebar">
+          {!isTablet && (
+            <div className="hama-brand">
+              <span className="hama-brand-mark"><MessageCircleMore size={24} /></span>
+              <span className="hama-brand-copy">
+                <strong>Hama Chat</strong>
+                <small>Connect · Chat · Share</small>
+              </span>
             </div>
           )}
-        </div>
-      </div>
-    );
-  }
-
-  // ─── TABLET (768px–1023px) ────────────────────────────────────────────────
-  // Narrow icon-only sidebar + chat area side by side
-  if (isTablet) {
-    return (
-      <div className='h-screen w-screen flex items-center justify-center font-sans overflow-hidden'>
-        <AestheticBackground />
-        <div className='h-screen w-screen bg-white/[0.01] backdrop-blur-3xl border border-white/10 flex overflow-hidden z-10'>
-          <ReceiverProfileDrawer />
-          {/* Narrow Sidebar */}
-          <div className='w-16 h-full border-r border-white/10 flex flex-col items-center py-3 gap-4 overflow-hidden'>
-            <ProfileHeader />
-            <ActiveTabSwitch />
-            <div className='flex-1 w-full overflow-y-auto'>
-              {ActiveTab === 'chats' ? <ChatList /> : <ContactList />}
+          {isTablet && (
+            <div className="hama-brand hama-brand--compact" title="Hama Chat">
+              <span className="hama-brand-mark"><MessageCircleMore size={23} /></span>
             </div>
-          </div>
-
-          {/* Chat Area */}
-          <div className='flex-1 h-full overflow-hidden'>
-            {selectedUser ? <ChatContainer /> : <NoChatConversation />}
-          </div>
-
-        </div>
-      </div>
-    );
-  }
-
-  // ─── DESKTOP (≥1024px) — ORIGINAL CODE, UNTOUCHED ─────────────────────────
-  return (
-    <div className='h-screen w-screen flex items-center justify-center font-sans overflow-hidden'>
-      <AestheticBackground />
-      <div className='h-[90vh] w-[65vw] max-w-7xl bg-white/[0.01] backdrop-blur-3xl border border-white/10 rounded-lg flex overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] z-10'>
-      <ReceiverProfileDrawer />
-        <div className='w-1/4 border-r border-white/10'>
-          {/* Sidebar */}
-          <div className='h-full w-full flex flex-col items-center justify-start gap-4 p-4'>
-            {/* User Details */}
-            <ProfileHeader />
-
-            {/* Chat List Or Contact List */}
-            <ActiveTabSwitch />
-
-            <div className='h-full w-full overflow-y-auto'>
-              {ActiveTab === 'chats' ? (<ChatList />) : (<ContactList />)}
+          )}
+          <ActiveTabSwitch />
+          {!isTablet && (
+            <div className="hama-sidebar-nav hama-sidebar-nav--secondary">
+              <button
+                type="button"
+                className="hama-nav-link"
+                onClick={() => setIsSettingsOpen(true)}
+              >
+                <Settings size={21} />
+                <span>Settings</span>
+              </button>
+              <button type="button" className="hama-nav-link" onClick={logout}>
+                <LogOut size={21} />
+                <span>Logout</span>
+              </button>
             </div>
-          </div>
-        </div>
-        {/* Right Side */}
-        <div className='w-3/4 h-full overflow-hidden'>
-          {selectedUser ? (<ChatContainer />) : (<NoChatConversation />)}
-        </div>
+          )}
+          {isTablet && (
+            <div className="hama-sidebar-nav hama-sidebar-nav--secondary hama-sidebar-nav--compact">
+              <button
+                type="button"
+                className="hama-nav-link"
+                onClick={() => setIsSettingsOpen(true)}
+                title="Settings"
+                aria-label="Settings"
+              >
+                <Settings size={21} />
+              </button>
+              <button
+                type="button"
+                className="hama-nav-link"
+                onClick={logout}
+                title="Logout"
+                aria-label="Logout"
+              >
+                <LogOut size={21} />
+              </button>
+            </div>
+          )}
+          <ProfileHeader onOpenSettings={() => setIsSettingsOpen(true)} compact={isTablet} />
+        </aside>
+        {listPanel}
+        <main className="hama-conversation-view">
+          {selectedUser ? <ChatContainer /> : <NoChatConversation />}
+        </main>
       </div>
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
-  );
+  )
 }
 
 export default Chatpage

@@ -14,23 +14,23 @@ const SeenTicks = ({ message, isMyMessage }) => {
 
   if (message.isOptimistic) {
     return (
-      <span className="inline-flex items-center ml-1">
-        <Check size={12} className="text-gray-400" />
+      <span className="hama-seen-tick inline-flex items-center ml-1">
+        <Check size={12} />
       </span>
     );
   }
 
   if (message.seen) {
     return (
-      <span className="inline-flex items-center ml-1" title="Seen">
-        <CheckCheck size={13} className="text-cyan-400" />
+      <span className="hama-seen-tick inline-flex items-center ml-1" title="Seen">
+        <CheckCheck size={13} />
       </span>
     );
   }
 
   return (
-    <span className="inline-flex items-center ml-1" title="Sent">
-      <Check size={12} className="text-gray-400" />
+    <span className="hama-seen-tick inline-flex items-center ml-1" title="Sent">
+      <Check size={12} />
     </span>
   );
 };
@@ -203,17 +203,17 @@ const ChatContainer = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="hama-chat-area">
       <ChatHeader />
 
       {/* Message Box */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+      <div className="hama-message-scroll">
         {isMessagesLoading ? (
           <MessagesLoadingSkeleton />
         ) : messages.length > 0 ? (
           <div
             ref={messagesEndRef}
-            className="flex-1 overflow-y-auto flex flex-col gap-2"
+            className="hama-message-list"
           >
             {messages.map((message) => {
               const isMyMessage =
@@ -240,13 +240,11 @@ const ChatContainer = () => {
                   }}
                 >
                   <div
-                    className={`chat-bubble cursor-pointer transition-all ${
-                      isMyMessage
-                        ? "bg-cyan-900 text-white"
-                        : "bg-gray-600 text-white"
+                    className={`hama-bubble cursor-pointer transition-all ${
+                      isMyMessage ? "hama-bubble--sent" : "hama-bubble--received"
                     } ${
                       selectedMessageId === message._id
-                        ? "ring-2 ring-cyan-400 brightness-125"
+                        ? "ring-2 ring-violet-400"
                         : ""
                     }`}
                   >
@@ -256,7 +254,7 @@ const ChatContainer = () => {
                         <img
                           src={message.image}
                           alt="message attachment"
-                          className="w-48 h-48 object-cover mb-2 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                          className="hama-message-image w-48 h-48 mb-2 cursor-pointer hover:opacity-90 transition-opacity"
                           onClick={(e) => {
                             e.stopPropagation();
                             setPreviewImage(message.image);
@@ -268,7 +266,7 @@ const ChatContainer = () => {
                           download
                           target="_blank"
                           rel="noreferrer"
-                          className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-2 right-2 bg-violet-950/75 hover:bg-violet-900 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Download size={14} />
@@ -281,10 +279,10 @@ const ChatContainer = () => {
 
                     {/* Deleted Message */}
                     {message.isDeleted && (
-                      <div className="italic text-gray-400 text-sm px-1">
+                      <div className="hama-message-deleted italic text-sm px-1">
                         🚫 Message removed
                         {message.deleteReason && (
-                          <span className="text-xs text-gray-500 ml-1">
+                        <span className="text-xs ml-1">
                             · {message.deleteReason}
                           </span>
                         )}
@@ -293,14 +291,14 @@ const ChatContainer = () => {
 
                     {/* Edited Badge */}
                     {message.isEdited && (
-                      <span className="text-xs text-gray-400 italic">
+                      <span className="hama-message-edited text-xs italic">
                         {" "}(edited)
                       </span>
                     )}
 
                     {/* Timestamp and Seen Ticks */}
                     <div className="flex items-center justify-end gap-0.5 mt-0.5">
-                      <p className="text-xs text-gray-400">
+                      <p className="hama-message-time">
                         {message.createdAt
                           ? new Date(message.createdAt).toLocaleTimeString(
                               [],
@@ -330,7 +328,7 @@ const ChatContainer = () => {
       {/* Image Preview Modal */}
       {previewImage && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-purple-950/75 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setPreviewImage(null)}
         >
           <div
@@ -340,7 +338,7 @@ const ChatContainer = () => {
             <div className="w-full flex justify-end">
               <button
                 onClick={() => setPreviewImage(null)}
-                className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-all"
+                className="bg-white/90 hover:bg-white text-violet-800 p-2 rounded-full transition-all"
               >
                 <X size={18} />
               </button>
@@ -349,7 +347,7 @@ const ChatContainer = () => {
             <img
               src={previewImage}
               alt="preview"
-              className="max-w-[80vw] max-h-[75vh] rounded-lg object-contain"
+              className="max-w-[80vw] max-h-[75vh] rounded-2xl object-contain shadow-2xl"
             />
 
             <a
@@ -357,7 +355,7 @@ const ChatContainer = () => {
               download
               target="_blank"
               rel="noreferrer"
-              className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all"
+              className="bg-violet-700 hover:bg-violet-600 text-white px-6 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all"
             >
               <Download size={14} />
               Download Image
@@ -368,12 +366,12 @@ const ChatContainer = () => {
 
       {/* Edit Message */}
       {editingMessage && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 border-t border-gray-600">
+        <div className="hama-edit-bar flex items-center gap-2 px-4 py-2">
           <input
             type="text"
             value={editText}
             onChange={(e) => setEditText(e.target.value)}
-            className="flex-1 bg-gray-700 text-white rounded-lg p-2 outline-none text-sm"
+            className="flex-1 bg-white text-violet-950 border border-violet-200 rounded-lg p-2 outline-none text-sm"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSaveEdit();
@@ -383,14 +381,14 @@ const ChatContainer = () => {
 
           <button
             onClick={handleSaveEdit}
-            className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm"
+            className="bg-violet-700 text-white px-3 py-2 rounded-lg text-sm"
           >
             Save
           </button>
 
           <button
             onClick={handleCancelEdit}
-            className="text-gray-400 hover:text-white px-2 py-2 text-sm"
+            className="text-violet-500 hover:text-violet-800 px-2 py-2 text-sm"
           >
             Cancel
           </button>
@@ -399,13 +397,13 @@ const ChatContainer = () => {
 
       {/* Delete Message Modal */}
       {showDeleteModal && deletingMessage && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-gray-800 rounded-xl p-5 w-80 flex flex-col gap-3 shadow-xl">
-            <h3 className="text-white font-semibold text-base">
+        <div className="hama-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="hama-delete-modal rounded-xl p-5 w-80 flex flex-col gap-3 shadow-xl">
+            <h3 className="font-semibold text-base">
               Delete Message
             </h3>
 
-            <p className="text-gray-400 text-sm">
+            <p className="text-sm">
               Select a reason (optional):
             </p>
 
@@ -415,8 +413,8 @@ const ChatContainer = () => {
                 onClick={() => setSelectedReason(reason)}
                 className={`text-left px-4 py-2 rounded-lg text-sm transition-all ${
                   selectedReason === reason
-                    ? "bg-red-600/40 text-red-300 border border-red-500"
-                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                    ? "bg-violet-100 text-violet-800 border border-violet-300"
+                    : "bg-violet-50 text-violet-700 hover:bg-violet-100"
                 }`}
               >
                 {reason === "Sent by mistake" && "😬 "}
@@ -429,7 +427,7 @@ const ChatContainer = () => {
             <div className="flex gap-2 mt-2">
               <button
                 onClick={handleDeleteMessage}
-                className="flex-1 bg-red-600 hover:bg-red-500 text-white py-2 rounded-lg text-sm font-semibold"
+                className="flex-1 bg-violet-700 hover:bg-violet-600 text-white py-2 rounded-lg text-sm font-semibold"
               >
                 Delete
               </button>
@@ -440,7 +438,7 @@ const ChatContainer = () => {
                   setDeletingMessage(null);
                   setSelectedReason("");
                 }}
-                className="flex-1 bg-gray-600 hover:bg-gray-500 text-white py-2 rounded-lg text-sm"
+                className="flex-1 bg-violet-100 hover:bg-violet-200 text-violet-800 py-2 rounded-lg text-sm"
               >
                 Cancel
               </button>
@@ -451,15 +449,12 @@ const ChatContainer = () => {
 
       {/* Typing Indicator */}
       {isTyping && (
-        <div className="px-5 py-2 flex items-center gap-2 text-sm text-gray-400">
-          <span className="italic">
-            {selectedUser?.fullName} is typing
-          </span>
-
-          <span className="flex items-center gap-1">
-            <span className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" />
-            <span className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce [animation-delay:150ms]" />
-            <span className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce [animation-delay:300ms]" />
+        <div className="hama-typing-row">
+          <span className="hama-typing-bubble">
+            <span className="hama-typing-dots" aria-hidden="true">
+              <i /><i /><i />
+            </span>
+            <span>{selectedUser?.fullName} is typing...</span>
           </span>
         </div>
       )}

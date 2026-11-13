@@ -1,88 +1,65 @@
 import React, { useEffect } from 'react'
-import UserLoadingSkeleton from './UserLoadingSkeleton';
-import { useChatStore } from '../store/useChatStore';
-import { useAuthStore } from '../store/useAuthStore';
-import useWindowSize from '../hooks/useWindowSize';
+import { Search } from 'lucide-react'
+import UserLoadingSkeleton from './UserLoadingSkeleton'
+import { useChatStore } from '../store/useChatStore'
+import { useAuthStore } from '../store/useAuthStore'
 
-const ContactList = () => {
-  const { allcontacts, setSelectedUser, getAllContacts, isUsersLoading } = useChatStore();
-  const { onlineUsers } = useAuthStore();
-  const isOnline = (userId) =>
-    onlineUsers.some((id) => String(id) === String(userId));
-  const { isTablet } = useWindowSize();
+const ContactList = ({ searchQuery = '' }) => {
+  const { allcontacts, selectedUser, setSelectedUser, getAllContacts, isUsersLoading } = useChatStore()
+  const { onlineUsers } = useAuthStore()
+  const onlineIds = new Set(onlineUsers.map(String))
+  const query = searchQuery.trim().toLocaleLowerCase()
+  const visibleContacts = allcontacts.filter((contact) =>
+    contact.fullName?.toLocaleLowerCase().includes(query)
+  )
 
   useEffect(() => {
-    getAllContacts();
+    getAllContacts()
   }, [getAllContacts])
 
   if (isUsersLoading) return <UserLoadingSkeleton />
-
-  // ─── TABLET: avatar-only list ─────────────────────────────────────────────
-  if (isTablet) {
+  if (!visibleContacts.length) {
     return (
-      <div className='w-full h-full flex flex-col items-center gap-2 overflow-y-auto py-1'>
-        {[...allcontacts].reverse().sort((a, b) => {
-          const aOnline = isOnline(a._id) ? 1 : 0;
-          const bOnline = isOnline(b._id) ? 1 : 0;
-          return bOnline - aOnline;
-        }).map((contact) => (
-          <button
-            key={contact._id}
-            onClick={() => setSelectedUser(contact)}
-            title={contact.fullName}
-            className='relative flex-shrink-0'
-          >
-            <div className={`avatar ${isOnline(contact._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
-              <img
-                src={contact.profilepic || "/avatar.jpg"}
-                alt={contact.fullName}
-                className='w-10 h-10 rounded-full object-cover'
-              />
-            </div>
-          </button>
-        ))}
+      <div className="hama-empty-list">
+        <span className="hama-empty-conversation-icon"><Search size={25} /></span>
+        <strong>No contacts found</strong>
+        <span>Try another name.</span>
       </div>
-    );
+    )
   }
 
-  // ─── MOBILE & DESKTOP: original layout ────────────────────────────────────
   return (
-    <div className='h-full w-full flex gap-3 text-white/70 flex-col'>
-      {[...allcontacts].reverse().sort((a, b) => {
-        const aOnline = isOnline(a._id) ? 1 : 0;
-        const bOnline = isOnline(b._id) ? 1 : 0;
-        return bOnline - aOnline;
-      }).map((contact) => (
-        <div
-          key={contact._id}
-          className='px-3 py-2 flex gap-2 rounded-lg bg-blue-900/20 hover:bg-blue-900/30 cursor-pointer'
-          onClick={() => setSelectedUser(contact)}
-        >
-          {contact.profilepic ? (
-            <div className={`avatar ${isOnline(contact._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
-              <img
-                src={contact.profilepic}
-                alt={contact.fullName}
-                className='w-10 h-10 rounded-full object-cover'
-              />
-            </div>
-          ) : (
-            <div className={`avatar ${isOnline(contact._id) ? 'online' : ''} w-10 h-10 rounded-full bg-gray-300`}>
-              <img src="/avatar.jpg" alt="" className='object-cover w-full h-full rounded-full' />
-            </div>
-          )}
-          <div className='flex flex-col'>
-            <span>
-              {contact.fullName.length > 9
-                ? contact.fullName.slice(0, 6) + "..."
-                : contact.fullName}
+    <div className="hama-chat-list">
+      {visibleContacts.map((contact) => {
+        const contactId = String(contact._id)
+        const isSelected = contactId === String(selectedUser?._id)
+        return (
+          <button
+            type="button"
+            key={contact._id}
+            onClick={() => setSelectedUser(contact)}
+            className={`hama-chat-row ${isSelected ? 'is-selected' : ''}`}
+            aria-current={isSelected ? 'true' : undefined}
+          >
+            <span className="hama-list-avatar">
+              <img src={contact.profilepic || '/avatar.jpg'} alt="" />
+              {onlineIds.has(contactId) && <i className="hama-online-dot" />}
             </span>
-            <span className={`text-sm ${isOnline(contact._id) ? 'text-green-500' : 'text-gray-300/30'}`}>{isOnline(contact._id) ? 'Online' : 'Offline'}</span>
-          </div>
-        </div>
-      ))}
+            <span className="hama-chat-row-body">
+              <span className="hama-chat-row-top">
+                <strong>{contact.fullName}</strong>
+              </span>
+              <span className="hama-chat-row-bottom">
+                <span className="hama-chat-preview">
+                  {onlineIds.has(contactId) ? 'Online now' : 'Start a conversation'}
+                </span>
+              </span>
+            </span>
+          </button>
+        )
+      })}
     </div>
-  );
+  )
 }
 
 export default ContactList

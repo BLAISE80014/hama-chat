@@ -43,9 +43,9 @@ const ReceiverProfileDrawer = () => {
             />
 
             {/* Drawer */}
-            <div className="fixed right-0 top-0 h-full w-80 bg-base-100 shadow-2xl z-50 flex flex-col animate-slide-in-right">
+            <div className="hama-profile-drawer fixed right-0 top-0 h-full w-80 shadow-2xl z-50 flex flex-col animate-slide-in-right">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-300/20">
+                <div className="hama-profile-drawer-heading flex items-center justify-between p-4 border-b border-gray-300/20">
                     <h2 className="font-semibold text-lg">Profile Info</h2>
                     <button onClick={() => setShowReceiverProfile(false)}>
                         <X size={22} />
@@ -77,7 +77,7 @@ const ReceiverProfileDrawer = () => {
 
                         {/* Details */}
                         <div className="w-full mt-4 flex flex-col gap-3">
-                            <div className="flex items-center gap-3 p-3 rounded-lg bg-base-200">
+                            <div className="hama-profile-detail flex items-center gap-3 p-3 rounded-lg">
                                 <MessageSquare size={18} className="text-primary" />
                                 <div>
                                     <p className="text-xs text-gray-400">About</p>
@@ -86,7 +86,7 @@ const ReceiverProfileDrawer = () => {
                             </div>
 
                             {/* // Profession */}
-                            <div className="flex items-center gap-3 p-3 rounded-lg bg-base-200">
+                            <div className="hama-profile-detail flex items-center gap-3 p-3 rounded-lg">
                                 <Briefcase size={18} className="text-primary" />
                                 <div>
                                     <p className="text-xs text-gray-400">Profession</p>
@@ -94,7 +94,7 @@ const ReceiverProfileDrawer = () => {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3 p-3 rounded-lg bg-base-200">
+                            <div className="hama-profile-detail flex items-center gap-3 p-3 rounded-lg">
                                 <User size={18} className="text-primary" />
                                 <div>
                                     <p className="text-xs text-gray-400">Username</p>
@@ -102,7 +102,7 @@ const ReceiverProfileDrawer = () => {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3 p-3 rounded-lg bg-base-200">
+                            <div className="hama-profile-detail flex items-center gap-3 p-3 rounded-lg">
                                 <Calendar size={18} className="text-primary" />
                                 <div>
                                     <p className="text-xs text-gray-400">Joined</p>

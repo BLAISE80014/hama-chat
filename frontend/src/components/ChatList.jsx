@@ -1,100 +1,99 @@
 import React, { useEffect } from 'react'
+import { CheckCheck } from 'lucide-react'
 import UserLoadingSkeleton from './UserLoadingSkeleton'
 import NoChatsFound from './NoChatsFound'
-import { useChatStore } from '../store/useChatStore';
-import { useAuthStore } from '../store/useAuthStore';
-import useWindowSize from '../hooks/useWindowSize';
+import { useChatStore } from '../store/useChatStore'
+import { useAuthStore } from '../store/useAuthStore'
 
-const ChatList = () => {
+const formatMessageTime = (date) => {
+  if (!date) return ''
+  const messageDate = new Date(date)
+  const today = new Date()
+  if (messageDate.toDateString() === today.toDateString()) {
+    return messageDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+  }
+  return messageDate.toLocaleDateString([], { month: 'short', day: 'numeric' })
+}
 
-  const { getMyChatPartners, chats, setSelectedUser, isUsersLoading, unreadMessages, clearUnread } = useChatStore();
-  const { onlineUsers } = useAuthStore();
-  const isOnline = (userId) =>
-    onlineUsers.some((id) => String(id) === String(userId));
-  const { isTablet } = useWindowSize();
+const ChatList = ({ searchQuery = '' }) => {
+  const {
+    selectedUser,
+    getMyChatPartners,
+    chats,
+    messages,
+    setSelectedUser,
+    isUsersLoading,
+    unreadMessages,
+    clearUnread,
+  } = useChatStore()
+  const { onlineUsers, authUser } = useAuthStore()
+  const onlineIds = new Set(onlineUsers.map(String))
+  const query = searchQuery.trim().toLocaleLowerCase()
+  const visibleChats = chats.filter((chat) =>
+    chat.fullName?.toLocaleLowerCase().includes(query)
+  )
 
   useEffect(() => {
-    getMyChatPartners();
+    getMyChatPartners()
   }, [getMyChatPartners])
 
   if (isUsersLoading) return <UserLoadingSkeleton />
+  if (!visibleChats.length) return <NoChatsFound />
 
-  if (chats.length === 0) return <NoChatsFound />
-
-  // ─── TABLET: avatar-only list ─────────────────────────────────────────────
-  if (isTablet) {
-    return (
-      <div className='w-full h-full flex flex-col items-center gap-2 overflow-y-auto py-1'>
-        {[...chats].sort((a, b) => {
-          const aVal = unreadMessages[a._id] ? 2 : isOnline(a._id) ? 1 : 0;
-          const bVal = unreadMessages[b._id] ? 2 : isOnline(b._id) ? 1 : 0;
-          return bVal - aVal;
-        }).map((chat) => (
-          <button
-            key={chat._id}
-            onClick={() => { setSelectedUser(chat); clearUnread(chat._id); }}
-            title={chat.fullName}
-            className='relative flex-shrink-0'
-          >
-            <div className={`avatar ${isOnline(chat._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
-              <img
-                src={chat.profilepic || "/avatar.jpg"}
-                alt={chat.fullName}
-                className='w-10 h-10 rounded-full object-cover'
-              />
-            </div>
-          </button>
-        ))}
-      </div>
-    );
-  }
-
-  // ─── MOBILE & DESKTOP: original layout ────────────────────────────────────
   return (
-    <div className='w-full h-full p-1 flex flex-col gap-2 overflow-y-auto'>
-      {[...chats].sort((a, b) => {
-        const aVal = unreadMessages[a._id] ? 2 : isOnline(a._id) ? 1 : 0;
-        const bVal = unreadMessages[b._id] ? 2 : isOnline(b._id) ? 1 : 0;
-        return bVal - aVal;
-      }).map((chat) => (
-        <div
-          key={chat._id}
-          onClick={() => { setSelectedUser(chat); clearUnread(chat._id); }}
-          className={`px-3 py-2 flex gap-2 rounded-lg cursor-pointer transition-all
-             ${unreadMessages[chat._id]
-              ? 'bg-blue-500/30 hover:bg-blue-500/40 border border-blue-400/40'
-              : 'bg-blue-900/20 hover:bg-blue-900/30'}`}
-        >
-          {chat.profilepic ? (
-            <div className={`avatar ${isOnline(chat._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
-              <img
-                src={chat.profilepic}
-                alt={chat.fullName}
-                className='w-10 h-10 rounded-full object-cover'
-              />
-            </div>
-          ) : (
-            <div className={`avatar ${isOnline(chat._id) ? 'online' : ''} h-10 w-10 rounded-full`}>
-              <img src="/avatar.jpg" alt="" className='object-cover w-full h-full rounded-full' />
-            </div>
-          )}
-          <div className='flex flex-col flex-1'>
-            <div className='flex items-center justify-between'>
-              <span>
-                {chat.fullName.length > 9 ? chat.fullName.slice(0, 6) + "..." : chat.fullName}
-              </span>
-              {unreadMessages[chat._id] && (
-                <span className='w-2.5 h-2.5 rounded-full bg-blue-400'></span>
-              )}
-            </div>
-            <span className={`text-sm ${isOnline(chat._id) ? 'text-green-500' : 'text-gray-300/30'}`}>
-              {isOnline(chat._id) ? 'Online' : 'Offline'}
+    <div className="hama-chat-list">
+      {visibleChats.map((chat) => {
+        const chatId = String(chat._id)
+        const isSelected = chatId === String(selectedUser?._id)
+        const isOnline = onlineIds.has(chatId)
+        const lastMessage = isSelected ? messages.at(-1) : null
+        const preview = lastMessage
+          ? lastMessage.isDeleted
+            ? 'Message deleted'
+            : lastMessage.text || (lastMessage.image ? 'Photo' : '')
+          : 'No messages yet'
+        const sentByMe = lastMessage &&
+          String(lastMessage.Sender) === String(authUser?._id)
+
+        return (
+          <button
+            type="button"
+            key={chat._id}
+            onClick={() => {
+              setSelectedUser(chat)
+              clearUnread(chat._id)
+            }}
+            className={`hama-chat-row ${isSelected ? 'is-selected' : ''}`}
+            aria-current={isSelected ? 'true' : undefined}
+          >
+            <span className="hama-list-avatar">
+              <img src={chat.profilepic || '/avatar.jpg'} alt="" />
+              {isOnline && <i className="hama-online-dot" />}
             </span>
-          </div>
-        </div>
-      ))}
+            <span className="hama-chat-row-body">
+              <span className="hama-chat-row-top">
+                <strong>{chat.fullName}</strong>
+                <span className="hama-chat-time">
+                  {lastMessage ? formatMessageTime(lastMessage.createdAt) : ''}
+                </span>
+              </span>
+              <span className="hama-chat-row-bottom">
+                <span className="hama-chat-preview">{preview}</span>
+                <span className="hama-chat-row-meta">
+                  {sentByMe && lastMessage.seen && (
+                    <CheckCheck size={15} className="hama-list-seen" aria-label="Seen" />
+                  )}
+                  {unreadMessages[chat._id] && (
+                    <i className="hama-unread-dot" aria-label="Unread message" />
+                  )}
+                </span>
+              </span>
+            </span>
+          </button>
+        )
+      })}
     </div>
-  );
+  )
 }
 
 export default ChatList

@@ -82,8 +82,8 @@ const SettingsModal = ({ isOpen, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-20 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-            <div className="bg-[#0f0f0f] border border-white/10 w-full max-w-4xl rounded-[2.5rem] overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto shadow-2xl">
+        <div className="hama-settings-backdrop fixed inset-0 z-20 flex items-center justify-center p-4 backdrop-blur-md">
+            <div className="hama-settings-card w-full max-w-4xl rounded-[2.5rem] overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto shadow-2xl">
 
                 {/* LEFT SECTION: Profile Pic (Based on UI Sample) */}
                 <div className="w-full md:w-[35%] p-8 border-b md:border-b-0 md:border-r border-white/5 flex flex-col items-center justify-center gap-6 bg-white/[0.02]">
